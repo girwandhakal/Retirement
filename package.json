@@ -1,12 +1,15 @@
 {
   "name": "retirement-planner",
   "private": true,
-  "packageManager": "pnpm@10.8.1",
+  "packageManager": "npm@11.6.2",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
-    "dev:web": "pnpm --filter @retirement/web dev",
-    "build:web": "pnpm --filter @retirement/web build",
-    "test:web": "pnpm --filter @retirement/web test",
-    "test:e2e": "pnpm --filter @retirement/web test:e2e"
+    "dev:web": "npm run dev --workspace=@retirement/web",
+    "build:web": "npm run build --workspace=@retirement/web",
+    "test:web": "npm run test --workspace=@retirement/web",
+    "test:e2e": "npm run test:e2e --workspace=@retirement/web"
   }
 }
-

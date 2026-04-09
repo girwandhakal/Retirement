@@ -22,16 +22,23 @@ packages/
 ## Current status
 
 - The repo scaffold is in place.
-- Dependencies have not been installed yet.
-- The machine currently has `node` and `python`, but `pnpm` and `uv` were not available when the scaffold was created.
+- The web workspace is configured for `npm` workspaces.
+- The API workspace is configured for `uv`.
 
 ## Expected local workflow
 
 ### Web
 
-1. Install `pnpm`.
-2. Run `pnpm install`.
-3. Run `pnpm dev:web`.
+1. Run `npm install`.
+2. Run `npm run dev:web`.
+3. Open `http://localhost:3000`.
+
+If PowerShell blocks `npm.ps1` on your machine, use `npm.cmd` instead:
+
+```powershell
+npm.cmd install
+npm.cmd run dev:web
+```
 
 ### API
 
