@@ -1,0 +1,63 @@
+[
+  {
+    "id": "steady-builder",
+    "label": "Steady Builder",
+    "description": "Mid-career saver with balanced assumptions.",
+    "input": {
+      "currentAge": 35,
+      "retirementAge": 65,
+      "lifeExpectancy": 92,
+      "initialBalance": 125000,
+      "monthlyContribution": 1200,
+      "annualReturnBeforeRetirement": 0.07,
+      "annualReturnDuringRetirement": 0.05,
+      "compoundingFrequency": "monthly",
+      "annualContributionGrowthRate": 0.03,
+      "withdrawalAmount": 6500,
+      "withdrawalFrequency": "monthly",
+      "inflationRate": 0.025,
+      "annualWithdrawalIncrease": 0.02
+    }
+  },
+  {
+    "id": "late-catch-up",
+    "label": "Late Catch-Up",
+    "description": "Higher savings rate with a shorter accumulation window.",
+    "input": {
+      "currentAge": 48,
+      "retirementAge": 67,
+      "lifeExpectancy": 90,
+      "initialBalance": 210000,
+      "monthlyContribution": 2200,
+      "annualReturnBeforeRetirement": 0.065,
+      "annualReturnDuringRetirement": 0.045,
+      "compoundingFrequency": "monthly",
+      "annualContributionGrowthRate": 0.02,
+      "withdrawalAmount": 7800,
+      "withdrawalFrequency": "monthly",
+      "inflationRate": 0.025,
+      "annualWithdrawalIncrease": 0.02
+    }
+  },
+  {
+    "id": "coast-fire",
+    "label": "Coast FIRE",
+    "description": "Large starting balance and modest ongoing contributions.",
+    "input": {
+      "currentAge": 40,
+      "retirementAge": 60,
+      "lifeExpectancy": 95,
+      "initialBalance": 420000,
+      "monthlyContribution": 600,
+      "annualReturnBeforeRetirement": 0.06,
+      "annualReturnDuringRetirement": 0.045,
+      "compoundingFrequency": "monthly",
+      "annualContributionGrowthRate": 0.01,
+      "withdrawalAmount": 9000,
+      "withdrawalFrequency": "monthly",
+      "inflationRate": 0.025,
+      "annualWithdrawalIncrease": 0.015
+    }
+  }
+]
+

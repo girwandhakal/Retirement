@@ -1,0 +1,12 @@
+{
+  "name": "retirement-planner",
+  "private": true,
+  "packageManager": "pnpm@10.8.1",
+  "scripts": {
+    "dev:web": "pnpm --filter @retirement/web dev",
+    "build:web": "pnpm --filter @retirement/web build",
+    "test:web": "pnpm --filter @retirement/web test",
+    "test:e2e": "pnpm --filter @retirement/web test:e2e"
+  }
+}
+

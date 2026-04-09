@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "retirement-api"
+version = "0.1.0"
+description = "FastAPI backend for the retirement planner scaffold."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "alembic>=1.16,<2.0",
+  "fastapi>=0.128,<0.129",
+  "numpy>=2.3,<3.0",
+  "psycopg[binary]>=3.2,<4.0",
+  "pydantic>=2.11,<3.0",
+  "sqlalchemy>=2.0,<3.0",
+  "uvicorn[standard]>=0.35,<0.36"
+]
+
+[project.optional-dependencies]
+dev = [
+  "httpx>=0.28,<0.29",
+  "pytest>=8.4,<9.0",
+  "ruff>=0.12,<0.13"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
