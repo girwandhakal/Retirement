@@ -6,9 +6,6 @@ export default function Page() {
       <section className="mx-auto flex min-h-screen max-w-7xl flex-col gap-10 px-6 py-10 lg:px-10 lg:py-14">
         <div className="space-y-6">
           <div className="max-w-3xl space-y-6">
-            <div className="inline-flex items-center rounded-full border border-white/14 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-cyan-100/90">
-              Retirement planning without spreadsheet drag
-            </div>
             <div className="space-y-4">
               <h1 className="font-display text-5xl leading-[0.95] tracking-tight text-white sm:text-6xl">
                 See if your retirement plan is on track before you trust it.
