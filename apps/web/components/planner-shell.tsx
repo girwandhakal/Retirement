@@ -126,7 +126,7 @@ function NumberField(props: {
           const parsed = Number(raw);
           field.onChange(props.percent ? parsed / 100 : parsed);
         }}
-        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400/70 focus:border-cyan-200/40"
+        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-3 py-2.5 text-sm text-white outline-none placeholder:text-slate-400/70 focus:border-cyan-200/40 sm:px-4 sm:py-3"
       />
       {fieldState.error ? (
         <p className="text-xs text-rose-200">{fieldState.error.message}</p>
@@ -152,7 +152,7 @@ function SelectField(props: {
       </div>
       <select
         {...props.form.register(props.name)}
-        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/40"
+        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-3 py-2.5 text-sm text-white outline-none focus:border-cyan-200/40 sm:px-4 sm:py-3"
       >
         {props.options.map((option) => (
           <option key={option.value} value={option.value} className="bg-ink-950">
@@ -360,12 +360,12 @@ export function PlannerShell() {
         : "lime";
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
+    <div className="grid min-w-0 gap-4 sm:gap-6 lg:grid-cols-[0.95fr_1.05fr]">
       <motion.section
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="glass-panel rounded-[2rem] p-5 sm:p-6"
+        className="glass-panel min-w-0 rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5 md:p-6"
       >
         <div className="space-y-6">
           <section className="space-y-4">
@@ -493,29 +493,29 @@ export function PlannerShell() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.05 }}
-        className="space-y-5"
+        className="min-w-0 space-y-5"
       >
-        <div className="glass-panel rounded-[2rem] p-5">
+        <div className="glass-panel min-w-0 rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5">
           <Tabs.Root
             value={activeTab}
             onValueChange={(value) => setActiveTab(value as PlannerMode)}
           >
-            <Tabs.List className="mb-5 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-white/10 bg-black/16 p-2">
+            <Tabs.List className="mb-4 grid grid-cols-3 gap-1.5 rounded-[1rem] border border-white/10 bg-black/16 p-1.5 sm:mb-5 sm:gap-2 sm:rounded-[1.5rem] sm:p-2">
               <Tabs.Trigger
                 value="save"
-                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
+                className="interactive-chip rounded-[0.75rem] px-2.5 py-2 text-xs text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)] sm:rounded-[1rem] sm:px-4 sm:py-3 sm:text-sm"
               >
                 Save
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="withdraw"
-                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
+                className="interactive-chip rounded-[0.75rem] px-2.5 py-2 text-xs text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)] sm:rounded-[1rem] sm:px-4 sm:py-3 sm:text-sm"
               >
                 Withdraw
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="journey"
-                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
+                className="interactive-chip rounded-[0.75rem] px-2.5 py-2 text-xs text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)] sm:rounded-[1rem] sm:px-4 sm:py-3 sm:text-sm"
               >
                 Journey
               </Tabs.Trigger>
@@ -533,18 +533,18 @@ export function PlannerShell() {
                   : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
               }
             >
-              <div className="mb-5 min-h-[7.5rem] sm:min-h-[6.5rem]">
+              <div className="mb-4 min-h-0 sm:mb-5 sm:min-h-[6.5rem]">
                 <div>
-                  <p className={`font-display text-3xl ${titleSparkClass}`}>
+                  <p className={`font-display text-2xl sm:text-3xl ${titleSparkClass}`}>
                     {view.title}
                   </p>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200/72">
+                  <p className="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/72 sm:mt-2 sm:text-sm sm:leading-6">
                     {view.subtitle}
                   </p>
                 </div>
               </div>
 
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                 {view.summary.map((item) => (
                   <SummaryCard key={item.label} {...item} />
                 ))}
@@ -566,44 +566,44 @@ export function PlannerShell() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        className="glass-panel rounded-[2rem] p-5 lg:col-span-2"
+        className="glass-panel min-w-0 overflow-hidden rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5 lg:col-span-2"
       >
         <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="font-display text-2xl text-white">
+            <p className="font-display text-xl text-white sm:text-2xl">
               Recent yearly checkpoints
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-200/72">
+            <p className="mt-1.5 text-xs leading-5 text-slate-200/72 sm:mt-2 sm:text-sm sm:leading-6">
               The full year-by-year ledger covers both the saving period and the
               retirement drawdown. Scroll to review every modeled year.
             </p>
           </div>
         </div>
 
-        <div className="mt-4 max-h-[31rem] overflow-auto rounded-[1.5rem] border border-white/10">
-          <table className="min-w-full divide-y divide-white/10 text-left text-sm text-slate-100/82">
-            <thead className="sticky top-0 bg-[#10233a]/92 text-xs uppercase tracking-[0.2em] text-slate-100/58 backdrop-blur">
+        <div className="-mx-4 mt-3 max-h-[24rem] overflow-auto sm:mx-0 sm:mt-4 sm:max-h-[31rem] sm:rounded-[1.5rem] sm:border sm:border-white/10">
+          <table className="min-w-[36rem] divide-y divide-white/10 text-left text-xs text-slate-100/82 sm:min-w-full sm:text-sm">
+            <thead className="sticky top-0 bg-[#10233a]/92 text-[10px] uppercase tracking-[0.2em] text-slate-100/58 backdrop-blur sm:text-xs">
               <tr>
-                <th className="px-4 py-3">Year</th>
-                <th className="px-4 py-3">Balance</th>
-                <th className="px-4 py-3">Interest</th>
-                <th className="px-4 py-3">Withdrawals</th>
-                <th className="px-4 py-3">End balance</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3">Year</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3">Balance</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3">Interest</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3">Withdrawals</th>
+                <th className="px-3 py-2 sm:px-4 sm:py-3">End balance</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-white/8 bg-black/12">
               {yearlyLedgerRows.map((row) => (
                 <tr key={row.id} className="table-row">
-                  <td className="px-4 py-3 align-top">
+                  <td className="px-3 py-2 align-top sm:px-4 sm:py-3">
                     <div className="font-medium text-white">Year {row.yearNumber}</div>
-                    <div className="text-xs text-slate-100/56">
+                    <div className="text-[10px] text-slate-100/56 sm:text-xs">
                       Age {row.ageStart} to {row.ageEnd}
                     </div>
                   </td>
-                  <td className="px-4 py-3">{formatCurrency(row.startingBalance)}</td>
-                  <td className="px-4 py-3">{formatCurrency(row.interest)}</td>
-                  <td className="px-4 py-3">{formatCurrency(row.withdrawals)}</td>
-                  <td className="px-4 py-3">{formatCurrency(row.endingBalance)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">{formatCurrency(row.startingBalance)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">{formatCurrency(row.interest)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">{formatCurrency(row.withdrawals)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 sm:px-4 sm:py-3">{formatCurrency(row.endingBalance)}</td>
                 </tr>
               ))}
             </tbody>

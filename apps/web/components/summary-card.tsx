@@ -34,24 +34,24 @@ export function SummaryCard({
 }: SummaryCardProps) {
   return (
     <article
-      className={`glass-panel interactive-panel relative isolate overflow-hidden flex min-h-[13.5rem] flex-col rounded-[1.75rem] bg-gradient-to-br px-5 py-5 ${accentClasses[accent]}`}
+      className={`glass-panel interactive-panel relative isolate overflow-hidden flex min-h-0 flex-col rounded-[1.25rem] bg-gradient-to-br px-4 py-4 sm:min-h-[13.5rem] sm:rounded-[1.75rem] sm:px-5 sm:py-5 ${accentClasses[accent]}`}
     >
       <div
         aria-hidden
-        className={`hero-orb -right-10 -top-12 h-28 w-28 ${accentGlowClasses[accent]}`}
+        className={`hero-orb -right-10 -top-12 h-20 w-20 sm:h-28 sm:w-28 ${accentGlowClasses[accent]}`}
         style={{ animationDelay: "-3s" }}
       />
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent"
       />
-      <p className="text-xs uppercase tracking-[0.24em] text-white/64">{label}</p>
+      <p className="text-[10px] uppercase tracking-[0.24em] text-white/64 sm:text-xs">{label}</p>
       <p
-        className={`mt-3 min-h-[2.75rem] bg-gradient-to-r ${accentValueClasses[accent]} bg-clip-text font-display text-3xl tracking-tight text-transparent`}
+        className={`mt-2 bg-gradient-to-r sm:mt-3 sm:min-h-[2.75rem] ${accentValueClasses[accent]} bg-clip-text font-display text-2xl tracking-tight text-transparent sm:text-3xl`}
       >
         {value}
       </p>
-      <p className="mt-4 min-h-[4.5rem] text-sm leading-6 text-white/72">
+      <p className="mt-2 text-xs leading-5 text-white/72 sm:mt-4 sm:min-h-[4.5rem] sm:text-sm sm:leading-6">
         {caption}
       </p>
     </article>

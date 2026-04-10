@@ -255,3 +255,51 @@ body::before {
     transform: none !important;
   }
 }
+
+/* Touch-device optimizations: disable hover transforms, add active feedback */
+@media (hover: none) {
+  .interactive-panel:hover {
+    transform: none;
+    border-color: rgba(255, 255, 255, 0.16);
+    box-shadow: var(--shadow-glass);
+  }
+
+  .interactive-panel:hover::after {
+    opacity: 0;
+  }
+
+  .interactive-panel:active {
+    transform: scale(0.98);
+    border-color: rgba(255, 255, 255, 0.24);
+    transition-duration: 0.12s;
+  }
+
+  .interactive-field:hover {
+    transform: none;
+  }
+
+  .interactive-chip:hover {
+    transform: none;
+  }
+}
+
+/* Prevent double-tap zoom on interactive elements */
+button,
+select,
+input,
+[role="tab"] {
+  touch-action: manipulation;
+}
+
+/* Remove iOS tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Scale ambient orbs down on mobile to reduce visual noise */
+@media (max-width: 639px) {
+  .hero-orb {
+    filter: blur(60px);
+    opacity: 0.35;
+  }
+}

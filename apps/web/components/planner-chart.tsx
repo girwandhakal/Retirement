@@ -51,8 +51,8 @@ export function PlannerChart({
 
       chart = new uPlot(
         {
-          width: Math.max(target.clientWidth, 320),
-          height: 280,
+          width: Math.max(target.clientWidth, 280),
+          height: target.clientWidth < 480 ? 200 : 280,
           cursor: {
             drag: { x: false, y: false },
           },
@@ -100,8 +100,9 @@ export function PlannerChart({
       );
 
       observer = new ResizeObserver((entries) => {
-        const nextWidth = Math.max(entries[0]?.contentRect.width ?? 320, 320);
-        chart?.setSize({ width: nextWidth, height: 280 });
+        const nextWidth = Math.max(entries[0]?.contentRect.width ?? 280, 280);
+        const nextHeight = nextWidth < 480 ? 200 : 280;
+        chart?.setSize({ width: nextWidth, height: nextHeight });
       });
 
       observer.observe(target);
@@ -131,16 +132,16 @@ export function PlannerChart({
   }[accent];
 
   return (
-    <section className="glass-panel interactive-panel relative isolate overflow-hidden rounded-[2rem] p-5">
+    <section className="glass-panel interactive-panel relative isolate min-w-0 overflow-hidden rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5">
       <div
         aria-hidden
         className={`hero-orb -right-8 top-4 h-24 w-24 ${accentGlowClass}`}
         style={{ animationDelay: "-5s" }}
       />
-      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className={`font-display text-2xl ${titleSparkClass}`}>{title}</p>
-          <p className="text-sm leading-6 text-slate-200/72">{subtitle}</p>
+          <p className={`font-display text-xl sm:text-2xl ${titleSparkClass}`}>{title}</p>
+          <p className="text-xs leading-5 text-slate-200/72 sm:text-sm sm:leading-6">{subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {series.map((item) => (
@@ -160,7 +161,7 @@ export function PlannerChart({
       </div>
       <div
         ref={containerRef}
-        className="min-h-[280px] w-full overflow-hidden rounded-[1.5rem]"
+        className="min-h-[200px] w-full overflow-hidden rounded-[1rem] sm:min-h-[280px] sm:rounded-[1.5rem]"
       />
     </section>
   );
