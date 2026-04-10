@@ -115,7 +115,7 @@ export function PlannerChart({
   }, [series, xValues]);
 
   return (
-    <section className="glass-panel rounded-[2rem] p-5">
+    <section className="glass-panel relative isolate overflow-hidden rounded-[2rem] p-5">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="font-display text-2xl text-white">{title}</p>
@@ -137,7 +137,10 @@ export function PlannerChart({
           ))}
         </div>
       </div>
-      <div ref={containerRef} className="min-h-[280px] w-full" />
+      <div
+        ref={containerRef}
+        className="min-h-[280px] w-full overflow-hidden rounded-[1.5rem]"
+      />
     </section>
   );
 }

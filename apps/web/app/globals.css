@@ -80,10 +80,23 @@ body::before {
 
 .uplot {
   color: #d8e7f2;
+  isolation: isolate;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+.uplot .u-over {
+  overflow: hidden;
+}
+
+.u-cursor-x,
+.u-cursor-y,
+.u-cursor-pt,
+.u-select {
+  display: none !important;
 }
 
 .u-legend,
 .u-title {
   display: none;
 }
-
