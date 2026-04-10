@@ -115,12 +115,6 @@ function sanitizePlannerInput(raw: Partial<PlannerInput>) {
       0,
       50_000_000,
     ),
-    retirementStartingBalance: coerceNumber(
-      merged.retirementStartingBalance,
-      defaultPlannerInput.retirementStartingBalance,
-      0,
-      50_000_000,
-    ),
     retirementGoal: coerceNumber(
       merged.retirementGoal,
       defaultPlannerInput.retirementGoal,
@@ -273,12 +267,6 @@ function solveRequiredMonthlyContribution(input: PlannerInput) {
   };
 }
 
-function resolveStandaloneWithdrawalStart(input: PlannerInput) {
-  return input.retirementStartingBalance > 0
-    ? input.retirementStartingBalance
-    : input.initialBalance;
-}
-
 export function coercePlannerInput(raw: Partial<PlannerInput>) {
   const parsed = plannerInputSchema.safeParse(sanitizePlannerInput(raw));
 
@@ -307,7 +295,7 @@ export function calculateAccumulation(input: PlannerInput): AccumulationResult {
 
 export function calculateWithdrawal(
   input: PlannerInput,
-  startingBalance = resolveStandaloneWithdrawalStart(input),
+  startingBalance = input.initialBalance,
 ): WithdrawalResult {
   const totalMonths = (input.lifeExpectancy - input.retirementAge) * 12;
   const compounding = compoundingIntervals[input.compoundingFrequency];
