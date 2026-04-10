@@ -12,14 +12,7 @@ A no-login, browser-local retirement planning tool. Full product direction is do
 - Mobile-responsive layout with touch-optimized interactions
 - FastAPI endpoints mirroring the browser-side calculator contract
 
-## What it does not do yet
 
-- Scenario presets, save/load, or import/export
-- Scenario comparison
-- Monte Carlo simulation
-- Tax-aware estimates
-- Social Security or pension income
-- User authentication
 
 ## Structure
 
@@ -37,11 +30,7 @@ docs/
   architecture.md
   milestones.md
   assumptions.md
-.agent/
-  AGENTS.md
-  project-plan.md
-  implementation-plan.md
-  research.md
+
 ```
 
 ## Product notes
