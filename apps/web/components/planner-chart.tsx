@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 type ChartSeries = {
   color: string;
   label: string;
-  values: number[];
+  values: Array<number | null>;
 };
 
 type PlannerChartProps = {
@@ -120,6 +120,21 @@ export function PlannerChart({
         <div>
           <p className="font-display text-2xl text-white">{title}</p>
           <p className="text-sm leading-6 text-slate-200/72">{subtitle}</p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {series.map((item) => (
+            <div
+              key={item.label}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/18 px-3 py-1.5 text-xs text-slate-100/78"
+            >
+              <span
+                aria-hidden
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: item.color }}
+              />
+              {item.label}
+            </div>
+          ))}
         </div>
       </div>
       <div ref={containerRef} className="min-h-[280px] w-full" />

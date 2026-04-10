@@ -17,9 +17,9 @@ __pycache__/
 .mypy_cache/
 .coverage
 htmlcov/
+.uv-cache/
+.agent/
 
 .env
 .env.*
 !.env.example
-
-.agents/*

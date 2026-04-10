@@ -18,8 +18,9 @@ class PlannerInput(PlannerModel):
     life_expectancy: int = Field(alias="lifeExpectancy", ge=60, le=110)
     initial_balance: float = Field(alias="initialBalance", ge=0)
     retirement_starting_balance: float = Field(
-        alias="retirementStartingBalance", ge=0
+        default=0, alias="retirementStartingBalance", ge=0
     )
+    retirement_goal: float = Field(alias="retirementGoal", ge=100000, le=50000000)
     monthly_contribution: float = Field(alias="monthlyContribution", ge=0)
     annual_return_before_retirement: float = Field(
         alias="annualReturnBeforeRetirement", ge=0, le=0.2
@@ -56,7 +57,14 @@ class TimelinePoint(PlannerModel):
 
 
 class AccumulationResult(PlannerModel):
+    additional_monthly_contribution_needed: float = Field(
+        alias="additionalMonthlyContributionNeeded"
+    )
+    can_reach_goal: bool = Field(alias="canReachGoal")
+    goal_funding_ratio: float = Field(alias="goalFundingRatio")
+    goal_gap: float = Field(alias="goalGap")
     monthly_income_estimate: float = Field(alias="monthlyIncomeEstimate")
+    required_monthly_contribution: float = Field(alias="requiredMonthlyContribution")
     retirement_balance: float = Field(alias="retirementBalance")
     timeline: list[TimelinePoint]
     total_contributions: float = Field(alias="totalContributions")

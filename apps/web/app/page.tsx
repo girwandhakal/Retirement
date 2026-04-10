@@ -1,9 +1,9 @@
 import { PlannerShell } from "@/components/planner-shell";
 
 const highlights = [
-  "Real-time browser-side planning for fast iteration.",
-  "Separate saving and withdrawal views with one shared scenario.",
-  "Starter API contract ready for future persistence and simulations.",
+  "Instant browser-side calculations with no login or API wait.",
+  "Save, reload, import, export, and compare scenarios locally.",
+  "Goal tracking, withdrawal sustainability, and plain-language guidance.",
 ];
 
 export default function Page() {
@@ -17,12 +17,12 @@ export default function Page() {
             </div>
             <div className="space-y-4">
               <h1 className="font-display text-5xl leading-[0.95] tracking-tight text-white sm:text-6xl">
-                See whether your retirement plan can carry you all the way
-                through.
+                See if your retirement plan is on track before you trust it.
               </h1>
               <p className="max-w-2xl text-lg leading-8 text-slate-200/80">
-                This scaffold starts with the core product path: build wealth,
-                turn it into income, and stress the journey before you trust it.
+                Model the years before retirement, the spending years after
+                retirement, and the full journey in one place. Adjust the inputs
+                and the charts respond immediately.
               </p>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
@@ -43,18 +43,18 @@ export default function Page() {
             </div>
             <div className="space-y-4">
               <h2 className="font-display text-2xl text-white">
-                What this first scaffold already accounts for
+                What the planner covers right now
               </h2>
               <ul className="space-y-3 text-sm leading-6 text-slate-100/76">
-                <li>Local deterministic calculations for instant feedback.</li>
-                <li>Scenario presets and browser-local save capability.</li>
-                <li>FastAPI calculation endpoints mirroring the browser engine.</li>
-                <li>Extension points for persistence, sharing, and Monte Carlo.</li>
+                <li>Deterministic accumulation, withdrawal, and full-journey planning.</li>
+                <li>Local scenario save/load plus JSON import and export.</li>
+                <li>Side-by-side scenario comparison without re-entering inputs.</li>
+                <li>Plain-language caveats and visible modeling assumptions.</li>
               </ul>
               <div className="rounded-2xl border border-white/10 bg-black/18 p-4 text-sm leading-6 text-slate-200/76">
                 Results are estimates, not financial advice. The current
-                formulas are deterministic and intended as an understandable MVP
-                baseline before more advanced simulation work.
+                formulas are deterministic and intended as a clear baseline
+                before more advanced simulation work.
               </div>
             </div>
           </aside>

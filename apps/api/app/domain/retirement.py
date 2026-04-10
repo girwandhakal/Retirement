@@ -11,6 +11,7 @@ from app.schemas.planner import (
 )
 
 TWO_PLACES = Decimal("0.01")
+FOUR_PLACES = Decimal("0.0001")
 
 COMPOUNDING_INTERVALS = {
     "monthly": {"months": 1, "rate_divisor": Decimal("12")},
@@ -31,6 +32,10 @@ def to_decimal(value: float) -> Decimal:
 
 def round_money(value: Decimal) -> float:
     return float(value.quantize(TWO_PLACES, rounding=ROUND_HALF_UP))
+
+
+def round_ratio(value: Decimal) -> float:
+    return float(value.quantize(FOUR_PLACES, rounding=ROUND_HALF_UP))
 
 
 def round_number(value: float | Decimal) -> float:
@@ -59,7 +64,9 @@ def yearly_withdrawal_bump(payload: PlannerInput) -> Decimal:
     return (inflation * adjustment) - Decimal("1")
 
 
-def calculate_accumulation(payload: PlannerInput) -> AccumulationResult:
+def run_accumulation(
+    payload: PlannerInput, monthly_contribution_override: Decimal | None = None
+) -> dict[str, object]:
     years_to_retirement = payload.retirement_age - payload.current_age
     total_months = years_to_retirement * 12
     interval = COMPOUNDING_INTERVALS[payload.compounding_frequency]
@@ -68,7 +75,11 @@ def calculate_accumulation(payload: PlannerInput) -> AccumulationResult:
     balance = to_decimal(payload.initial_balance)
     total_contributions = to_decimal(payload.initial_balance)
     total_growth = Decimal("0")
-    monthly_contribution = to_decimal(payload.monthly_contribution)
+    monthly_contribution = (
+        monthly_contribution_override
+        if monthly_contribution_override is not None
+        else to_decimal(payload.monthly_contribution)
+    )
 
     timeline = [
         build_point(age, balance, total_contributions, total_growth, Decimal("0"))
@@ -96,13 +107,93 @@ def calculate_accumulation(payload: PlannerInput) -> AccumulationResult:
                 payload.annual_contribution_growth_rate
             )
 
+    return {
+        "years_to_retirement": years_to_retirement,
+        "retirement_balance": round_money(balance),
+        "total_contributions": round_money(total_contributions),
+        "total_growth": round_money(total_growth),
+        "monthly_income_estimate": round_money(
+            balance * Decimal("0.04") / Decimal("12")
+        ),
+        "timeline": timeline,
+    }
+
+
+def solve_required_monthly_contribution(payload: PlannerInput) -> dict[str, float | bool]:
+    current_outcome = run_accumulation(payload)
+
+    if current_outcome["retirement_balance"] >= payload.retirement_goal:
+        return {
+            "additional_monthly_contribution_needed": 0.0,
+            "can_reach_goal": True,
+            "required_monthly_contribution": round_money(
+                to_decimal(payload.monthly_contribution)
+            ),
+        }
+
+    low = to_decimal(payload.monthly_contribution)
+    high = max(low * Decimal("2"), Decimal("500"))
+    can_reach_goal = False
+
+    for _ in range(18):
+        if run_accumulation(payload, high)["retirement_balance"] >= payload.retirement_goal:
+            can_reach_goal = True
+            break
+        high *= Decimal("2")
+
+    if not can_reach_goal:
+        return {
+            "additional_monthly_contribution_needed": round_money(
+                high - to_decimal(payload.monthly_contribution)
+            ),
+            "can_reach_goal": False,
+            "required_monthly_contribution": round_money(high),
+        }
+
+    for _ in range(32):
+        mid = (low + high) / Decimal("2")
+        result = run_accumulation(payload, mid)
+
+        if result["retirement_balance"] >= payload.retirement_goal:
+            high = mid
+        else:
+            low = mid
+
+    return {
+        "additional_monthly_contribution_needed": round_money(
+            high - to_decimal(payload.monthly_contribution)
+        ),
+        "can_reach_goal": True,
+        "required_monthly_contribution": round_money(high),
+    }
+
+
+def calculate_accumulation(payload: PlannerInput) -> AccumulationResult:
+    accumulation = run_accumulation(payload)
+    contribution_target = solve_required_monthly_contribution(payload)
+    goal_gap = to_decimal(accumulation["retirement_balance"]) - to_decimal(
+        payload.retirement_goal
+    )
+
     return AccumulationResult(
-        years_to_retirement=years_to_retirement,
-        retirement_balance=round_money(balance),
-        total_contributions=round_money(total_contributions),
-        total_growth=round_money(total_growth),
-        monthly_income_estimate=round_money(balance * Decimal("0.04") / Decimal("12")),
-        timeline=timeline,
+        additional_monthly_contribution_needed=contribution_target[
+            "additional_monthly_contribution_needed"
+        ],
+        can_reach_goal=contribution_target["can_reach_goal"],
+        goal_funding_ratio=round_ratio(
+            to_decimal(accumulation["retirement_balance"])
+            / to_decimal(payload.retirement_goal)
+        ),
+        goal_gap=round_money(goal_gap),
+        monthly_income_estimate=accumulation["monthly_income_estimate"],
+        required_monthly_contribution=contribution_target[
+            "required_monthly_contribution"
+        ],
+        retirement_balance=accumulation["retirement_balance"],
+        timeline=accumulation["timeline"],
+        total_contributions=accumulation["total_contributions"],
+        total_growth=accumulation["total_growth"],
+        years_to_retirement=accumulation["years_to_retirement"],
     )
 
 

@@ -16,6 +16,7 @@ export const scenarioPresets: Array<{
       lifeExpectancy: 92,
       initialBalance: 125000,
       retirementStartingBalance: 0,
+      retirementGoal: 1500000,
       monthlyContribution: 1200,
       annualReturnBeforeRetirement: 0.07,
       annualReturnDuringRetirement: 0.05,
@@ -37,6 +38,7 @@ export const scenarioPresets: Array<{
       lifeExpectancy: 90,
       initialBalance: 210000,
       retirementStartingBalance: 0,
+      retirementGoal: 1300000,
       monthlyContribution: 2200,
       annualReturnBeforeRetirement: 0.065,
       annualReturnDuringRetirement: 0.045,
@@ -58,6 +60,7 @@ export const scenarioPresets: Array<{
       lifeExpectancy: 95,
       initialBalance: 420000,
       retirementStartingBalance: 0,
+      retirementGoal: 1800000,
       monthlyContribution: 600,
       annualReturnBeforeRetirement: 0.06,
       annualReturnDuringRetirement: 0.045,
@@ -70,4 +73,3 @@ export const scenarioPresets: Array<{
     },
   },
 ];
-

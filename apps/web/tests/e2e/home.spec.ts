@@ -4,7 +4,9 @@ test("home page loads the planner shell", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: /see whether your retirement plan/i }),
+    page.getByRole("heading", {
+      name: /see if your retirement plan is on track/i,
+    }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: /save to browser/i }),

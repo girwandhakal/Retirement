@@ -23,6 +23,8 @@ def test_domain_journey_grows_before_retirement() -> None:
     result = calculate_journey(payload)
 
     assert result.accumulation.retirement_balance > payload.initial_balance
+    assert result.accumulation.required_monthly_contribution >= payload.monthly_contribution
+    assert result.accumulation.goal_funding_ratio > 0
     assert len(result.timeline) > len(result.accumulation.timeline)
 
 
@@ -37,3 +39,5 @@ def test_journey_endpoint_returns_expected_shape() -> None:
     assert "accumulation" in data
     assert "withdrawal" in data
     assert "shortfallOrSurplus" in data
+    assert "goalGap" in data["accumulation"]
+    assert "requiredMonthlyContribution" in data["accumulation"]

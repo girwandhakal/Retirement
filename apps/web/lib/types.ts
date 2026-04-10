@@ -21,6 +21,7 @@ export const plannerInputSchema = z
     lifeExpectancy: z.number().int().min(60).max(110),
     initialBalance: z.number().min(0),
     retirementStartingBalance: z.number().min(0),
+    retirementGoal: z.number().min(100_000).max(50_000_000),
     monthlyContribution: z.number().min(0),
     annualReturnBeforeRetirement: z.number().min(0).max(0.2),
     annualReturnDuringRetirement: z.number().min(0).max(0.2),
@@ -52,7 +53,12 @@ export type TimelinePoint = {
 };
 
 export type AccumulationResult = {
+  additionalMonthlyContributionNeeded: number;
+  canReachGoal: boolean;
+  goalFundingRatio: number;
+  goalGap: number;
   monthlyIncomeEstimate: number;
+  requiredMonthlyContribution: number;
   retirementBalance: number;
   timeline: TimelinePoint[];
   totalContributions: number;
@@ -83,6 +89,7 @@ export const defaultPlannerInput: PlannerInput = {
   lifeExpectancy: 92,
   initialBalance: 125000,
   retirementStartingBalance: 0,
+  retirementGoal: 1500000,
   monthlyContribution: 1200,
   annualReturnBeforeRetirement: 0.07,
   annualReturnDuringRetirement: 0.05,
@@ -93,4 +100,3 @@ export const defaultPlannerInput: PlannerInput = {
   inflationRate: 0.025,
   annualWithdrawalIncrease: 0.02,
 };
-

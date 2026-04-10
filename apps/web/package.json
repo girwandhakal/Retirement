@@ -2,12 +2,12 @@
   "name": "@retirement/web",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "dev": "node ../../node_modules/next/dist/bin/next dev --webpack",
+    "build": "node ../../node_modules/next/dist/bin/next build --webpack",
+    "start": "node ../../node_modules/next/dist/bin/next start",
+    "test": "node ../../node_modules/vitest/vitest.mjs run",
+    "test:watch": "node ../../node_modules/vitest/vitest.mjs",
+    "test:e2e": "node ../../node_modules/@playwright/test/cli.js test"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.1.0",
@@ -33,4 +33,3 @@
     "vitest": "^4.0.7"
   }
 }
-
