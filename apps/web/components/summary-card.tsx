@@ -20,14 +20,15 @@ export function SummaryCard({
 }: SummaryCardProps) {
   return (
     <article
-      className={`glass-panel rounded-[1.75rem] bg-gradient-to-br px-5 py-5 ${accentClasses[accent]}`}
+      className={`glass-panel relative isolate overflow-hidden flex min-h-[13.5rem] flex-col rounded-[1.75rem] bg-gradient-to-br px-5 py-5 ${accentClasses[accent]}`}
     >
       <p className="text-xs uppercase tracking-[0.24em] text-white/64">{label}</p>
-      <p className="mt-3 font-display text-3xl tracking-tight text-white">
+      <p className="mt-3 min-h-[2.75rem] font-display text-3xl tracking-tight text-white">
         {value}
       </p>
-      <p className="mt-3 text-sm leading-6 text-white/72">{caption}</p>
+      <p className="mt-4 min-h-[4.5rem] text-sm leading-6 text-white/72">
+        {caption}
+      </p>
     </article>
   );
 }
-
