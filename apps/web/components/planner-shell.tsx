@@ -351,7 +351,7 @@ export function PlannerShell() {
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="glass-panel min-w-0 rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5 md:p-6"
+        className="glass-panel min-w-0 rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5 md:p-6 lg:sticky lg:top-6 lg:self-start"
       >
         <div className="space-y-6">
           <section className="space-y-4">
