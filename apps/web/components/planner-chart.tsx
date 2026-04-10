@@ -11,7 +11,6 @@ type ChartSeries = {
 type PlannerChartProps = {
   accent?: "sky" | "lime" | "gold" | "rose";
   title: string;
-  subtitle: string;
   xValues: number[];
   series: ChartSeries[];
 };
@@ -19,7 +18,6 @@ type PlannerChartProps = {
 export function PlannerChart({
   accent = "sky",
   title,
-  subtitle,
   xValues,
   series,
 }: PlannerChartProps) {
@@ -139,10 +137,7 @@ export function PlannerChart({
         style={{ animationDelay: "-5s" }}
       />
       <div className="mb-3 flex flex-col gap-2 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className={`font-display text-xl sm:text-2xl ${titleSparkClass}`}>{title}</p>
-          <p className="text-xs leading-5 text-slate-200/72 sm:text-sm sm:leading-6">{subtitle}</p>
-        </div>
+        <p className={`font-display text-xl sm:text-2xl ${titleSparkClass}`}>{title}</p>
         <div className="flex flex-wrap gap-2">
           {series.map((item) => (
             <div

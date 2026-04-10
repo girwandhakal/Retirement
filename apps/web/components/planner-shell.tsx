@@ -191,11 +191,7 @@ export function PlannerShell() {
     activeTab === "save"
       ? {
           title: "Save for retirement",
-          subtitle:
-            "Measure how current savings and return assumptions compare with the retirement target.",
           chartTitle: "Portfolio growth vs. principal",
-          chartSubtitle:
-            "The planner keeps the calculation local so every edit updates instantly without an API call.",
           chartX: accumulation.timeline.map((point) => point.age),
           chartSeries: [
             {
@@ -213,7 +209,7 @@ export function PlannerShell() {
             {
               label: "Projected at retirement",
               value: formatCurrency(accumulation.retirementBalance),
-              caption: "Estimated portfolio value when retirement begins.",
+              caption: "Estimated portfolio value at retirement.",
               accent: accumulation.goalGap >= 0 ? ("lime" as const) : ("sky" as const),
             },
             {
@@ -222,21 +218,19 @@ export function PlannerShell() {
                 accumulation.goalGap >= 0
                   ? formatCurrency(accumulation.goalGap)
                   : `-${formatCurrency(Math.abs(accumulation.goalGap))}`,
-              caption: "Positive clears the target; negative means more savings are needed.",
+              caption: accumulation.goalGap >= 0 ? "Surplus above your target." : "Shortfall below your target.",
               accent: accumulation.goalGap >= 0 ? ("lime" as const) : ("rose" as const),
             },
             {
               label: "Monthly contribution needed",
               value: formatCurrency(accumulation.requiredMonthlyContribution),
-              caption: accumulation.canReachGoal
-                ? "Estimated monthly savings needed to reach the target."
-                : "Current assumptions do not reach the target within the modeled bounds.",
+              caption: "Monthly savings to reach your goal.",
               accent: "gold" as const,
             },
             {
               label: "4% monthly income guide",
               value: formatCurrency(accumulation.monthlyIncomeEstimate),
-              caption: "Rule-of-thumb monthly income based on a 4% annual withdrawal rate.",
+              caption: "Based on the 4% annual withdrawal rule.",
               accent: "sky" as const,
             },
           ],
@@ -244,11 +238,7 @@ export function PlannerShell() {
       : activeTab === "withdraw"
         ? {
             title: "Withdraw in retirement",
-            subtitle:
-              "See how long the portfolio may last after contributions stop and withdrawals begin.",
             chartTitle: "Retirement drawdown",
-            chartSubtitle:
-              "This view starts from today's portfolio balance and models the drawdown path independently.",
             chartX: standaloneWithdrawal.timeline.map((point) => point.age),
             chartSeries: [
               {
@@ -268,13 +258,13 @@ export function PlannerShell() {
               {
                 label: "Starting retirement balance",
                 value: formatCurrency(standaloneWithdrawal.startingBalance),
-                caption: "This standalone retirement view starts from the current portfolio balance.",
+                caption: "Your current portfolio balance.",
                 accent: "sky" as const,
               },
               {
                 label: "Years covered",
                 value: formatYears(standaloneWithdrawal.yearsCovered),
-                caption: "Years before the balance first turns negative in the model.",
+                caption: "Years before funds run out.",
                 accent: standaloneWithdrawal.sustainableThroughLifeExpectancy
                   ? ("lime" as const)
                   : ("gold" as const),
@@ -285,7 +275,7 @@ export function PlannerShell() {
                   standaloneWithdrawal.depletionAge === null
                     ? "Not depleted"
                     : standaloneWithdrawal.depletionAge.toFixed(1),
-                caption: "First modeled age when the retirement balance drops below zero.",
+                caption: standaloneWithdrawal.depletionAge === null ? "Portfolio lasts through retirement." : "Age when balance reaches zero.",
                 accent:
                   standaloneWithdrawal.depletionAge === null
                     ? ("lime" as const)
@@ -294,7 +284,7 @@ export function PlannerShell() {
               {
                 label: "Ending balance",
                 value: formatCurrency(standaloneWithdrawal.endingBalance),
-                caption: "Balance remaining at the life expectancy horizon.",
+                caption: "Remaining at life expectancy.",
                 accent:
                   standaloneWithdrawal.endingBalance >= 0
                     ? ("lime" as const)
@@ -304,11 +294,7 @@ export function PlannerShell() {
           }
         : {
             title: "Full retirement journey",
-            subtitle:
-              "Connect the saving years and spending years in one deterministic timeline.",
             chartTitle: "Start-to-finish balance path",
-            chartSubtitle:
-              "The journey mode hands the projected retirement balance directly into the withdrawal model for a full deterministic scenario.",
             chartX: journey.timeline.map((point) => point.age),
             chartSeries: [
               {
@@ -321,25 +307,25 @@ export function PlannerShell() {
               {
                 label: "Balance at retirement",
                 value: formatCurrency(journey.accumulation.retirementBalance),
-                caption: "Projected hand-off from the saving phase into withdrawals.",
+                caption: "Portfolio value when withdrawals begin.",
                 accent: "sky" as const,
               },
               {
                 label: "Surplus or shortfall",
                 value: formatCurrency(journey.shortfallOrSurplus),
-                caption: "Positive leaves money at the horizon; negative means it runs out early.",
+                caption: journey.shortfallOrSurplus >= 0 ? "Money remaining at the end." : "Runs out before life expectancy.",
                 accent: journey.shortfallOrSurplus >= 0 ? ("lime" as const) : ("rose" as const),
               },
               {
                 label: "Goal funding ratio",
                 value: formatPercent(accumulation.goalFundingRatio),
-                caption: "Share of the retirement target funded by the current saving plan.",
+                caption: "How much of your goal is funded.",
                 accent: accumulation.goalFundingRatio >= 1 ? ("lime" as const) : ("gold" as const),
               },
               {
                 label: "Income target",
                 value: formatCurrency(input.withdrawalAmount),
-                caption: `Modeled as a ${input.withdrawalFrequency} retirement withdrawal target.`,
+                caption: `${input.withdrawalFrequency.charAt(0).toUpperCase() + input.withdrawalFrequency.slice(1)} withdrawal amount.`,
                 accent: "gold" as const,
               },
             ],
@@ -533,15 +519,10 @@ export function PlannerShell() {
                   : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
               }
             >
-              <div className="mb-4 min-h-0 sm:mb-5 sm:min-h-[6.5rem]">
-                <div>
-                  <p className={`font-display text-2xl sm:text-3xl ${titleSparkClass}`}>
-                    {view.title}
-                  </p>
-                  <p className="mt-1.5 max-w-2xl text-xs leading-5 text-slate-200/72 sm:mt-2 sm:text-sm sm:leading-6">
-                    {view.subtitle}
-                  </p>
-                </div>
+              <div className="mb-4 sm:mb-5">
+                <p className={`font-display text-2xl sm:text-3xl ${titleSparkClass}`}>
+                  {view.title}
+                </p>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
@@ -556,7 +537,6 @@ export function PlannerShell() {
         <PlannerChart
           accent={chartAccent}
           title={view.chartTitle}
-          subtitle={view.chartSubtitle}
           xValues={view.chartX}
           series={view.chartSeries}
         />
@@ -568,17 +548,9 @@ export function PlannerShell() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="glass-panel min-w-0 overflow-hidden rounded-[1.25rem] p-4 sm:rounded-[2rem] sm:p-5 lg:col-span-2"
       >
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="font-display text-xl text-white sm:text-2xl">
-              Recent yearly checkpoints
-            </p>
-            <p className="mt-1.5 text-xs leading-5 text-slate-200/72 sm:mt-2 sm:text-sm sm:leading-6">
-              The full year-by-year ledger covers both the saving period and the
-              retirement drawdown. Scroll to review every modeled year.
-            </p>
-          </div>
-        </div>
+        <p className="font-display text-xl text-white sm:text-2xl">
+          Year by year
+        </p>
 
         <div className="-mx-4 mt-3 max-h-[24rem] overflow-auto sm:mx-0 sm:mt-4 sm:max-h-[31rem] sm:rounded-[1.5rem] sm:border sm:border-white/10">
           <table className="min-w-[36rem] divide-y divide-white/10 text-left text-xs text-slate-100/82 sm:min-w-full sm:text-sm">
