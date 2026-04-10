@@ -9,6 +9,7 @@ type ChartSeries = {
 };
 
 type PlannerChartProps = {
+  accent?: "sky" | "lime" | "gold" | "rose";
   title: string;
   subtitle: string;
   xValues: number[];
@@ -16,6 +17,7 @@ type PlannerChartProps = {
 };
 
 export function PlannerChart({
+  accent = "sky",
   title,
   subtitle,
   xValues,
@@ -114,18 +116,37 @@ export function PlannerChart({
     };
   }, [series, xValues]);
 
+  const titleSparkClass = {
+    sky: "text-spark-sky",
+    lime: "text-spark-lime",
+    gold: "text-spark-gold",
+    rose: "text-spark-rose",
+  }[accent];
+
+  const accentGlowClass = {
+    sky: "bg-sky-500/18",
+    lime: "bg-lime-300/16",
+    gold: "bg-gold-300/18",
+    rose: "bg-rose-300/18",
+  }[accent];
+
   return (
-    <section className="glass-panel relative isolate overflow-hidden rounded-[2rem] p-5">
+    <section className="glass-panel interactive-panel relative isolate overflow-hidden rounded-[2rem] p-5">
+      <div
+        aria-hidden
+        className={`hero-orb -right-8 top-4 h-24 w-24 ${accentGlowClass}`}
+        style={{ animationDelay: "-5s" }}
+      />
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-display text-2xl text-white">{title}</p>
+          <p className={`font-display text-2xl ${titleSparkClass}`}>{title}</p>
           <p className="text-sm leading-6 text-slate-200/72">{subtitle}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           {series.map((item) => (
             <div
               key={item.label}
-              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/18 px-3 py-1.5 text-xs text-slate-100/78"
+              className="interactive-chip inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/18 px-3 py-1.5 text-xs text-slate-100/78"
             >
               <span
                 aria-hidden

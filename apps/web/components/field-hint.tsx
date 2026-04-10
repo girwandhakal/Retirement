@@ -13,7 +13,7 @@ export function FieldHint({ children }: FieldHintProps) {
         <Tooltip.Trigger asChild>
           <button
             type="button"
-            className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/14 bg-white/8 text-[10px] font-bold text-cyan-100 transition hover:bg-white/16"
+            className="interactive-chip inline-flex h-5 w-5 items-center justify-center rounded-full border border-white/14 bg-white/8 text-[10px] font-bold text-cyan-100 hover:bg-white/16"
             aria-label="Field description"
           >
             ?
@@ -31,4 +31,3 @@ export function FieldHint({ children }: FieldHintProps) {
     </Tooltip.Provider>
   );
 }
-

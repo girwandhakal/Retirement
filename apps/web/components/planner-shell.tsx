@@ -2,7 +2,7 @@
 
 import * as Tabs from "@radix-ui/react-tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useDeferredValue, useState } from "react";
 import { useController, useForm, type UseFormReturn } from "react-hook-form";
 
@@ -126,7 +126,7 @@ function NumberField(props: {
           const parsed = Number(raw);
           field.onChange(props.percent ? parsed / 100 : parsed);
         }}
-        className="w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-400/70 focus:border-cyan-200/40"
+        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-400/70 focus:border-cyan-200/40"
       />
       {fieldState.error ? (
         <p className="text-xs text-rose-200">{fieldState.error.message}</p>
@@ -152,7 +152,7 @@ function SelectField(props: {
       </div>
       <select
         {...props.form.register(props.name)}
-        className="w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-200/40"
+        className="interactive-field w-full rounded-2xl border border-white/10 bg-black/18 px-4 py-3 text-sm text-white outline-none focus:border-cyan-200/40"
       >
         {props.options.map((option) => (
           <option key={option.value} value={option.value} className="bg-ink-950">
@@ -167,6 +167,7 @@ function SelectField(props: {
 
 export function PlannerShell() {
   const [activeTab, setActiveTab] = useState<PlannerMode>("journey");
+  const reduceMotion = useReducedMotion();
 
   const form = useForm<PlannerInput>({
     resolver: zodResolver(plannerInputSchema),
@@ -344,6 +345,20 @@ export function PlannerShell() {
             ],
           };
 
+  const titleSparkClass =
+    activeTab === "save"
+      ? "text-spark-sky"
+      : activeTab === "withdraw"
+        ? "text-spark-rose"
+        : "text-spark-lime";
+
+  const chartAccent =
+    activeTab === "save"
+      ? "sky"
+      : activeTab === "withdraw"
+        ? "rose"
+        : "lime";
+
   return (
     <div className="grid gap-6 lg:grid-cols-[0.95fr_1.05fr]">
       <motion.section
@@ -355,7 +370,7 @@ export function PlannerShell() {
         <div className="space-y-6">
           <section className="space-y-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-200/58">
+              <p className="text-spark-sky text-xs uppercase tracking-[0.24em]">
                 Essential inputs
               </p>
             </div>
@@ -407,7 +422,7 @@ export function PlannerShell() {
 
           <section className="space-y-4">
             <div>
-              <p className="text-xs uppercase tracking-[0.24em] text-slate-200/58">
+              <p className="text-spark-gold text-xs uppercase tracking-[0.24em]">
                 Assumptions
               </p>
             </div>
@@ -488,41 +503,58 @@ export function PlannerShell() {
             <Tabs.List className="mb-5 grid grid-cols-3 gap-2 rounded-[1.5rem] border border-white/10 bg-black/16 p-2">
               <Tabs.Trigger
                 value="save"
-                className="rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white"
+                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
               >
                 Save
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="withdraw"
-                className="rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white"
+                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
               >
                 Withdraw
               </Tabs.Trigger>
               <Tabs.Trigger
                 value="journey"
-                className="rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white"
+                className="interactive-chip rounded-[1rem] px-4 py-3 text-sm text-slate-200/76 data-[state=active]:bg-white/12 data-[state=active]:text-white data-[state=active]:shadow-[0_16px_32px_rgba(4,17,31,0.25)]"
               >
                 Journey
               </Tabs.Trigger>
             </Tabs.List>
           </Tabs.Root>
-          <div className="mb-5 min-h-[7.5rem] sm:min-h-[6.5rem]">
-            <div>
-              <p className="font-display text-3xl text-white">{view.title}</p>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200/72">
-                {view.subtitle}
-              </p>
-            </div>
-          </div>
+          <AnimatePresence initial={false} mode="wait">
+            <motion.div
+              key={activeTab}
+              initial={reduceMotion ? { opacity: 1 } : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={reduceMotion ? { opacity: 1 } : { opacity: 0, y: -8 }}
+              transition={
+                reduceMotion
+                  ? { duration: 0 }
+                  : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
+              }
+            >
+              <div className="mb-5 min-h-[7.5rem] sm:min-h-[6.5rem]">
+                <div>
+                  <p className={`font-display text-3xl ${titleSparkClass}`}>
+                    {view.title}
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-200/72">
+                    {view.subtitle}
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {view.summary.map((item) => (
-              <SummaryCard key={item.label} {...item} />
-            ))}
-          </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                {view.summary.map((item) => (
+                  <SummaryCard key={item.label} {...item} />
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
 
         <PlannerChart
+          accent={chartAccent}
           title={view.chartTitle}
           subtitle={view.chartSubtitle}
           xValues={view.chartX}
@@ -561,7 +593,7 @@ export function PlannerShell() {
             </thead>
             <tbody className="divide-y divide-white/8 bg-black/12">
               {yearlyLedgerRows.map((row) => (
-                <tr key={row.id}>
+                <tr key={row.id} className="table-row">
                   <td className="px-4 py-3 align-top">
                     <div className="font-medium text-white">Year {row.yearNumber}</div>
                     <div className="text-xs text-slate-100/56">
