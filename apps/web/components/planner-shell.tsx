@@ -552,9 +552,9 @@ export function PlannerShell() {
           Year by year
         </p>
 
-        <div className="-mx-4 mt-3 max-h-[24rem] overflow-auto sm:mx-0 sm:mt-4 sm:max-h-[31rem] sm:rounded-[1.5rem] sm:border sm:border-white/10">
+        <div className="-mx-4 -mb-4 mt-3 max-h-[24rem] overflow-auto border-t border-white/10 sm:-mx-5 sm:-mb-5 sm:mt-4 sm:max-h-[31rem]">
           <table className="min-w-[36rem] divide-y divide-white/10 text-left text-xs text-slate-100/82 sm:min-w-full sm:text-sm">
-            <thead className="sticky top-0 bg-[#10233a]/92 text-[10px] uppercase tracking-[0.2em] text-slate-100/58 backdrop-blur sm:text-xs">
+            <thead className="sticky top-0 bg-[#10233a] text-[10px] uppercase tracking-[0.2em] text-slate-100/58 sm:text-xs">
               <tr>
                 <th className="px-3 py-2 sm:px-4 sm:py-3">Year</th>
                 <th className="px-3 py-2 sm:px-4 sm:py-3">Balance</th>
