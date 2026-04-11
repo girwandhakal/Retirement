@@ -3,11 +3,13 @@ from fastapi import APIRouter
 from app.domain.retirement import (
     calculate_accumulation,
     calculate_journey,
+    calculate_planner,
     calculate_withdrawal,
 )
 from app.schemas.planner import (
     AccumulationResult,
     JourneyResult,
+    PlannerResultSet,
     PlannerInput,
     WithdrawalResult,
 )
@@ -29,3 +31,7 @@ def withdrawal(payload: PlannerInput) -> WithdrawalResult:
 def journey(payload: PlannerInput) -> JourneyResult:
     return calculate_journey(payload)
 
+
+@router.post("/planner", response_model=PlannerResultSet)
+def planner(payload: PlannerInput) -> PlannerResultSet:
+    return calculate_planner(payload)

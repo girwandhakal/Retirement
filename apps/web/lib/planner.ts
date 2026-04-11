@@ -2,6 +2,7 @@ import {
   type AccumulationResult,
   defaultPlannerInput,
   type JourneyResult,
+  type PlannerResultSet,
   plannerInputSchema,
   type PlannerInput,
   type TimelinePoint,
@@ -38,6 +39,11 @@ export type OpportunityInsight = {
   description: string;
   id: string;
   label: string;
+};
+
+type WithdrawalSimulation = {
+  rawEndingBalance: number;
+  result: WithdrawalResult;
 };
 
 function roundMoney(value: number) {
@@ -112,6 +118,12 @@ function sanitizePlannerInput(raw: Partial<PlannerInput>) {
     initialBalance: coerceNumber(
       merged.initialBalance,
       defaultPlannerInput.initialBalance,
+      0,
+      50_000_000,
+    ),
+    retirementStartingBalance: coerceNumber(
+      merged.retirementStartingBalance,
+      defaultPlannerInput.retirementStartingBalance,
       0,
       50_000_000,
     ),
@@ -293,16 +305,32 @@ export function calculateAccumulation(input: PlannerInput): AccumulationResult {
   };
 }
 
+function resolveStandaloneWithdrawalStart(input: PlannerInput) {
+  if (input.retirementStartingBalance > 0) {
+    return input.retirementStartingBalance;
+  }
+
+  return input.initialBalance;
+}
+
 export function calculateWithdrawal(
   input: PlannerInput,
-  startingBalance = input.initialBalance,
+  startingBalance = resolveStandaloneWithdrawalStart(input),
 ): WithdrawalResult {
+  return simulateWithdrawal(input, startingBalance).result;
+}
+
+function simulateWithdrawal(
+  input: PlannerInput,
+  startingBalance = resolveStandaloneWithdrawalStart(input),
+): WithdrawalSimulation {
   const totalMonths = (input.lifeExpectancy - input.retirementAge) * 12;
   const compounding = compoundingIntervals[input.compoundingFrequency];
   const withdrawalInterval = withdrawalIntervals[input.withdrawalFrequency];
 
   let age = input.retirementAge;
   let balance = startingBalance;
+  let rawBalance = startingBalance;
   let totalGrowth = 0;
   let totalWithdrawals = 0;
   let withdrawalAmount = input.withdrawalAmount;
@@ -313,19 +341,39 @@ export function calculateWithdrawal(
   ];
 
   for (let month = 1; month <= totalMonths; month += 1) {
-    if (month % withdrawalInterval === 0) {
-      balance -= withdrawalAmount;
-      totalWithdrawals += withdrawalAmount;
+    const rawBalanceWasPositive = rawBalance > 0;
+    const scheduledWithdrawalMonth = month % withdrawalInterval === 0;
+
+    if (scheduledWithdrawalMonth) {
+      rawBalance -= withdrawalAmount;
+
+      if (balance > 0) {
+        const actualWithdrawal = Math.min(balance, withdrawalAmount);
+        balance -= actualWithdrawal;
+        totalWithdrawals += actualWithdrawal;
+      }
     }
 
-    if (balance > 0 && month % compounding.months === 0) {
-      const growth =
-        balance * (input.annualReturnDuringRetirement / compounding.rateDivisor);
-      balance += growth;
-      totalGrowth += growth;
+    if (month % compounding.months === 0) {
+      if (rawBalance > 0) {
+        rawBalance +=
+          rawBalance *
+          (input.annualReturnDuringRetirement / compounding.rateDivisor);
+      }
+
+      if (balance > 0) {
+        const growth =
+          balance * (input.annualReturnDuringRetirement / compounding.rateDivisor);
+        balance += growth;
+        totalGrowth += growth;
+      }
     }
 
-    if (balance <= 0 && depletionAge === null) {
+    if (
+      depletionAge === null &&
+      rawBalance <= 0 &&
+      (rawBalanceWasPositive || (scheduledWithdrawalMonth && withdrawalAmount > 0))
+    ) {
       depletionAge = input.retirementAge + month / 12;
     }
 
@@ -337,27 +385,60 @@ export function calculateWithdrawal(
   }
 
   return {
-    startingBalance: roundMoney(startingBalance),
-    endingBalance: roundMoney(balance),
-    totalWithdrawals: roundMoney(totalWithdrawals),
-    yearsCovered: depletionAge
-      ? roundMoney(depletionAge - input.retirementAge)
-      : totalMonths / 12,
-    depletionAge: depletionAge ? roundMoney(depletionAge) : null,
-    sustainableThroughLifeExpectancy: balance >= 0,
-    timeline,
+    rawEndingBalance: roundMoney(rawBalance),
+    result: {
+      startingBalance: roundMoney(startingBalance),
+      endingBalance: roundMoney(balance),
+      totalWithdrawals: roundMoney(totalWithdrawals),
+      yearsCovered: depletionAge
+        ? roundMoney(depletionAge - input.retirementAge)
+        : totalMonths / 12,
+      depletionAge: depletionAge ? roundMoney(depletionAge) : null,
+      sustainableThroughLifeExpectancy:
+        depletionAge === null || depletionAge >= input.lifeExpectancy,
+      timeline,
+    },
   };
 }
 
 export function calculateJourney(input: PlannerInput): JourneyResult {
   const accumulation = calculateAccumulation(input);
-  const withdrawal = calculateWithdrawal(input, accumulation.retirementBalance);
+  const withdrawalSimulation = simulateWithdrawal(
+    input,
+    accumulation.retirementBalance,
+  );
 
   return {
     accumulation,
-    withdrawal,
-    shortfallOrSurplus: roundMoney(withdrawal.endingBalance),
-    timeline: [...accumulation.timeline.slice(0, -1), ...withdrawal.timeline],
+    withdrawal: withdrawalSimulation.result,
+    shortfallOrSurplus: withdrawalSimulation.rawEndingBalance,
+    timeline: [
+      ...accumulation.timeline.slice(0, -1),
+      ...withdrawalSimulation.result.timeline,
+    ],
+  };
+}
+
+export function calculatePlannerResultSet(input: PlannerInput): PlannerResultSet {
+  const accumulation = calculateAccumulation(input);
+  const standaloneWithdrawal = calculateWithdrawal(input);
+  const journeyWithdrawalSimulation = simulateWithdrawal(
+    input,
+    accumulation.retirementBalance,
+  );
+
+  return {
+    accumulation,
+    standaloneWithdrawal,
+    journey: {
+      accumulation,
+      withdrawal: journeyWithdrawalSimulation.result,
+      shortfallOrSurplus: journeyWithdrawalSimulation.rawEndingBalance,
+      timeline: [
+        ...accumulation.timeline.slice(0, -1),
+        ...journeyWithdrawalSimulation.result.timeline,
+      ],
+    },
   };
 }
 

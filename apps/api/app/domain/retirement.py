@@ -5,6 +5,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from app.schemas.planner import (
     AccumulationResult,
     JourneyResult,
+    PlannerResultSet,
     PlannerInput,
     TimelinePoint,
     WithdrawalResult,
@@ -24,6 +25,8 @@ WITHDRAWAL_INTERVALS = {
     "quarterly": 3,
     "annual": 12,
 }
+
+WithdrawalSimulation = tuple[WithdrawalResult, float]
 
 
 def to_decimal(value: float) -> Decimal:
@@ -206,6 +209,12 @@ def resolve_standalone_withdrawal_start(payload: PlannerInput) -> Decimal:
 def calculate_withdrawal(
     payload: PlannerInput, starting_balance: Decimal | None = None
 ) -> WithdrawalResult:
+    return simulate_withdrawal(payload, starting_balance)[0]
+
+
+def simulate_withdrawal(
+    payload: PlannerInput, starting_balance: Decimal | None = None
+) -> WithdrawalSimulation:
     total_months = (payload.life_expectancy - payload.retirement_age) * 12
     compounding = COMPOUNDING_INTERVALS[payload.compounding_frequency]
     withdrawal_interval = WITHDRAWAL_INTERVALS[payload.withdrawal_frequency]
@@ -217,6 +226,7 @@ def calculate_withdrawal(
 
     age = payload.retirement_age
     balance = resolved_starting_balance
+    raw_balance = resolved_starting_balance
     total_growth = Decimal("0")
     total_withdrawals = Decimal("0")
     withdrawal_amount = to_decimal(payload.withdrawal_amount)
@@ -227,20 +237,42 @@ def calculate_withdrawal(
     ]
 
     for month in range(1, total_months + 1):
-        if month % withdrawal_interval == 0:
-            balance -= withdrawal_amount
-            total_withdrawals += withdrawal_amount
+        raw_balance_was_positive = raw_balance > 0
+        scheduled_withdrawal_month = month % withdrawal_interval == 0
 
-        if balance > 0 and month % compounding["months"] == 0:
-            growth = (
-                balance
-                * to_decimal(payload.annual_return_during_retirement)
-                / compounding["rate_divisor"]
+        if scheduled_withdrawal_month:
+            raw_balance -= withdrawal_amount
+
+            if balance > 0:
+                actual_withdrawal = min(balance, withdrawal_amount)
+                balance -= actual_withdrawal
+                total_withdrawals += actual_withdrawal
+
+        if month % compounding["months"] == 0:
+            if raw_balance > 0:
+                raw_balance += (
+                    raw_balance
+                    * to_decimal(payload.annual_return_during_retirement)
+                    / compounding["rate_divisor"]
+                )
+
+            if balance > 0:
+                growth = (
+                    balance
+                    * to_decimal(payload.annual_return_during_retirement)
+                    / compounding["rate_divisor"]
+                )
+                balance += growth
+                total_growth += growth
+
+        if (
+            depletion_age is None
+            and raw_balance <= 0
+            and (
+                raw_balance_was_positive
+                or (scheduled_withdrawal_month and withdrawal_amount > 0)
             )
-            balance += growth
-            total_growth += growth
-
-        if balance <= 0 and depletion_age is None:
+        ):
             depletion_age = round_number(payload.retirement_age + month / 12)
 
         if month % 12 == 0:
@@ -256,26 +288,51 @@ def calculate_withdrawal(
         else total_months / 12
     )
 
-    return WithdrawalResult(
-        starting_balance=round_money(resolved_starting_balance),
-        ending_balance=round_money(balance),
-        total_withdrawals=round_money(total_withdrawals),
-        years_covered=round_number(years_covered),
-        depletion_age=depletion_age,
-        sustainable_through_life_expectancy=balance >= 0,
-        timeline=timeline,
+    return (
+        WithdrawalResult(
+            starting_balance=round_money(resolved_starting_balance),
+            ending_balance=round_money(balance),
+            total_withdrawals=round_money(total_withdrawals),
+            years_covered=round_number(years_covered),
+            depletion_age=depletion_age,
+            sustainable_through_life_expectancy=(
+                depletion_age is None or depletion_age >= payload.life_expectancy
+            ),
+            timeline=timeline,
+        ),
+        round_money(raw_balance),
     )
 
 
 def calculate_journey(payload: PlannerInput) -> JourneyResult:
     accumulation = calculate_accumulation(payload)
-    withdrawal = calculate_withdrawal(
+    withdrawal, raw_ending_balance = simulate_withdrawal(
         payload, to_decimal(accumulation.retirement_balance)
     )
 
     return JourneyResult(
         accumulation=accumulation,
         withdrawal=withdrawal,
-        shortfall_or_surplus=withdrawal.ending_balance,
+        shortfall_or_surplus=raw_ending_balance,
         timeline=[*accumulation.timeline[:-1], *withdrawal.timeline],
+    )
+
+
+def calculate_planner(payload: PlannerInput) -> PlannerResultSet:
+    accumulation = calculate_accumulation(payload)
+    standalone_withdrawal = calculate_withdrawal(payload)
+    journey_withdrawal, raw_ending_balance = simulate_withdrawal(
+        payload, to_decimal(accumulation.retirement_balance)
+    )
+    journey = JourneyResult(
+        accumulation=accumulation,
+        withdrawal=journey_withdrawal,
+        shortfall_or_surplus=raw_ending_balance,
+        timeline=[*accumulation.timeline[:-1], *journey_withdrawal.timeline],
+    )
+
+    return PlannerResultSet(
+        accumulation=accumulation,
+        standalone_withdrawal=standalone_withdrawal,
+        journey=journey,
     )

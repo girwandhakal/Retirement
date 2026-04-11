@@ -3,23 +3,24 @@
 import * as Tabs from "@radix-ui/react-tabs";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { useDeferredValue, useState } from "react";
+import { startTransition, useDeferredValue, useEffect, useState } from "react";
 import { useController, useForm, type UseFormReturn } from "react-hook-form";
 
 import { FieldHint } from "@/components/field-hint";
 import { PlannerChart } from "@/components/planner-chart";
 import { SummaryCard } from "@/components/summary-card";
-import { formatCurrency, formatPercent, formatYears } from "@/lib/format";
+import { fetchPlannerResultSet } from "@/lib/api";
+import { formatCurrency } from "@/lib/format";
 import {
-  calculateAccumulation,
-  calculateJourney,
-  calculateWithdrawal,
+  calculatePlannerResultSet,
   coercePlannerInput,
 } from "@/lib/planner";
+import { buildPlannerView } from "@/lib/planner-view";
 import {
   defaultPlannerInput,
   type PlannerInput,
   type PlannerMode,
+  type PlannerResultSet,
   type TimelinePoint,
   plannerInputSchema,
 } from "@/lib/types";
@@ -178,158 +179,54 @@ export function PlannerShell() {
   const watchedValues = form.watch();
   const deferredValues = useDeferredValue(watchedValues);
   const input = coercePlannerInput(deferredValues);
+  const plannerRequestBody = JSON.stringify(input);
+  const localResults = calculatePlannerResultSet(input);
+  const [apiResults, setApiResults] = useState<PlannerResultSet | null>(null);
+  const [backendUnavailable, setBackendUnavailable] = useState(false);
 
-  const accumulation = calculateAccumulation(input);
-  const standaloneWithdrawal = calculateWithdrawal(input);
-  const journey = calculateJourney(input);
+  useEffect(() => {
+    const abortController = new AbortController();
+    const requestInput = JSON.parse(plannerRequestBody) as PlannerInput;
+
+    startTransition(() => {
+      setApiResults(null);
+    });
+
+    void fetchPlannerResultSet(requestInput, abortController.signal)
+      .then((result) => {
+        startTransition(() => {
+          setApiResults(result);
+          setBackendUnavailable(false);
+        });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") {
+          return;
+        }
+
+        startTransition(() => {
+          setApiResults(null);
+          setBackendUnavailable(true);
+        });
+      });
+
+    return () => {
+      abortController.abort();
+    };
+  }, [plannerRequestBody]);
+
+  const accumulation = apiResults?.accumulation ?? localResults.accumulation;
+  const journey = apiResults?.journey ?? localResults.journey;
   const yearlyLedgerRows = [
     ...buildYearlyLedgerRows(accumulation.timeline),
     ...buildYearlyLedgerRows(journey.withdrawal.timeline, accumulation.timeline.length - 1),
   ];
-
-  const view =
-    activeTab === "save"
-      ? {
-          title: "Save for retirement",
-          chartTitle: "Portfolio growth vs. principal",
-          chartX: accumulation.timeline.map((point) => point.age),
-          chartSeries: [
-            {
-              label: "Projected balance",
-              color: "#aefcff",
-              values: accumulation.timeline.map((point) => point.balance),
-            },
-            {
-              label: "Principal invested",
-              color: "#d7f58c",
-              values: accumulation.timeline.map((point) => point.contributions),
-            },
-          ],
-          summary: [
-            {
-              label: "Projected at retirement",
-              value: formatCurrency(accumulation.retirementBalance),
-              caption: "Estimated portfolio value at retirement.",
-              accent: accumulation.goalGap >= 0 ? ("lime" as const) : ("sky" as const),
-            },
-            {
-              label: "Retirement goal gap",
-              value:
-                accumulation.goalGap >= 0
-                  ? formatCurrency(accumulation.goalGap)
-                  : `-${formatCurrency(Math.abs(accumulation.goalGap))}`,
-              caption: accumulation.goalGap >= 0 ? "Surplus above your target." : "Shortfall below your target.",
-              accent: accumulation.goalGap >= 0 ? ("lime" as const) : ("rose" as const),
-            },
-            {
-              label: "Monthly contribution needed",
-              value: formatCurrency(accumulation.requiredMonthlyContribution),
-              caption: "Monthly savings to reach your goal.",
-              accent: "gold" as const,
-            },
-            {
-              label: "4% monthly income guide",
-              value: formatCurrency(accumulation.monthlyIncomeEstimate),
-              caption: "Based on the 4% annual withdrawal rule.",
-              accent: "sky" as const,
-            },
-          ],
-        }
-      : activeTab === "withdraw"
-        ? {
-            title: "Withdraw in retirement",
-            chartTitle: "Retirement drawdown",
-            chartX: standaloneWithdrawal.timeline.map((point) => point.age),
-            chartSeries: [
-              {
-                label: "Remaining balance",
-                color: "#ffd69a",
-                values: standaloneWithdrawal.timeline.map((point) => point.balance),
-              },
-              {
-                label: "Withdrawals taken",
-                color: "#ffc6d0",
-                values: standaloneWithdrawal.timeline.map(
-                  (point) => point.withdrawals,
-                ),
-              },
-            ],
-            summary: [
-              {
-                label: "Starting retirement balance",
-                value: formatCurrency(standaloneWithdrawal.startingBalance),
-                caption: "Your current portfolio balance.",
-                accent: "sky" as const,
-              },
-              {
-                label: "Years covered",
-                value: formatYears(standaloneWithdrawal.yearsCovered),
-                caption: "Years before funds run out.",
-                accent: standaloneWithdrawal.sustainableThroughLifeExpectancy
-                  ? ("lime" as const)
-                  : ("gold" as const),
-              },
-              {
-                label: "Depletion age",
-                value:
-                  standaloneWithdrawal.depletionAge === null
-                    ? "Not depleted"
-                    : standaloneWithdrawal.depletionAge.toFixed(1),
-                caption: standaloneWithdrawal.depletionAge === null ? "Portfolio lasts through retirement." : "Age when balance reaches zero.",
-                accent:
-                  standaloneWithdrawal.depletionAge === null
-                    ? ("lime" as const)
-                    : ("rose" as const),
-              },
-              {
-                label: "Ending balance",
-                value: formatCurrency(standaloneWithdrawal.endingBalance),
-                caption: "Remaining at life expectancy.",
-                accent:
-                  standaloneWithdrawal.endingBalance >= 0
-                    ? ("lime" as const)
-                    : ("rose" as const),
-              },
-            ],
-          }
-        : {
-            title: "Full retirement journey",
-            chartTitle: "Start-to-finish balance path",
-            chartX: journey.timeline.map((point) => point.age),
-            chartSeries: [
-              {
-                label: "Portfolio balance",
-                color: "#5ac8fa",
-                values: journey.timeline.map((point) => point.balance),
-              },
-            ],
-            summary: [
-              {
-                label: "Balance at retirement",
-                value: formatCurrency(journey.accumulation.retirementBalance),
-                caption: "Portfolio value when withdrawals begin.",
-                accent: "sky" as const,
-              },
-              {
-                label: "Surplus or shortfall",
-                value: formatCurrency(journey.shortfallOrSurplus),
-                caption: journey.shortfallOrSurplus >= 0 ? "Money remaining at the end." : "Runs out before life expectancy.",
-                accent: journey.shortfallOrSurplus >= 0 ? ("lime" as const) : ("rose" as const),
-              },
-              {
-                label: "Goal funding ratio",
-                value: formatPercent(accumulation.goalFundingRatio),
-                caption: "How much of your goal is funded.",
-                accent: accumulation.goalFundingRatio >= 1 ? ("lime" as const) : ("gold" as const),
-              },
-              {
-                label: "Income target",
-                value: formatCurrency(input.withdrawalAmount),
-                caption: `${input.withdrawalFrequency.charAt(0).toUpperCase() + input.withdrawalFrequency.slice(1)} withdrawal amount.`,
-                accent: "gold" as const,
-              },
-            ],
-          };
+  const view = buildPlannerView({
+    activeTab,
+    accumulation,
+    input,
+    journey,
+  });
 
   const titleSparkClass =
     activeTab === "save"
@@ -530,6 +427,11 @@ export function PlannerShell() {
                   <SummaryCard key={item.label} {...item} />
                 ))}
               </div>
+              {backendUnavailable ? (
+                <p className="mt-3 text-xs text-amber-100/72 sm:text-sm">
+                  Backend unavailable. Showing browser fallback calculations until the API responds again.
+                </p>
+              ) : null}
             </motion.div>
           </AnimatePresence>
         </div>

@@ -91,5 +91,11 @@ class JourneyResult(PlannerModel):
     withdrawal: WithdrawalResult
 
 
+class PlannerResultSet(PlannerModel):
+    accumulation: AccumulationResult
+    journey: JourneyResult
+    standalone_withdrawal: WithdrawalResult = Field(alias="standaloneWithdrawal")
+
+
 class HealthResponse(PlannerModel):
     status: str

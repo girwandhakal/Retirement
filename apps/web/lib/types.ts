@@ -20,6 +20,7 @@ export const plannerInputSchema = z
     retirementAge: z.number().int().min(40).max(85),
     lifeExpectancy: z.number().int().min(60).max(110),
     initialBalance: z.number().min(0),
+    retirementStartingBalance: z.number().min(0),
     retirementGoal: z.number().min(100_000).max(50_000_000),
     monthlyContribution: z.number().min(0),
     annualReturnBeforeRetirement: z.number().min(0).max(0.2),
@@ -82,11 +83,18 @@ export type JourneyResult = {
   withdrawal: WithdrawalResult;
 };
 
+export type PlannerResultSet = {
+  accumulation: AccumulationResult;
+  journey: JourneyResult;
+  standaloneWithdrawal: WithdrawalResult;
+};
+
 export const defaultPlannerInput: PlannerInput = {
   currentAge: 35,
   retirementAge: 65,
   lifeExpectancy: 92,
   initialBalance: 125000,
+  retirementStartingBalance: 0,
   retirementGoal: 1500000,
   monthlyContribution: 1200,
   annualReturnBeforeRetirement: 0.07,
