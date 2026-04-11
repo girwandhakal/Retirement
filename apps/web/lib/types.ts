@@ -21,7 +21,7 @@ export const plannerInputSchema = z
     lifeExpectancy: z.number().int().min(60).max(110),
     initialBalance: z.number().min(0),
     retirementStartingBalance: z.number().min(0),
-    retirementGoal: z.number().min(100_000).max(50_000_000),
+    retirementGoal: z.number().min(0).max(50_000_000),
     monthlyContribution: z.number().min(0),
     annualReturnBeforeRetirement: z.number().min(0).max(0.2),
     annualReturnDuringRetirement: z.number().min(0).max(0.2),
@@ -69,6 +69,7 @@ export type AccumulationResult = {
 export type WithdrawalResult = {
   depletionAge: number | null;
   endingBalance: number;
+  lastsForever: boolean;
   startingBalance: number;
   sustainableThroughLifeExpectancy: boolean;
   timeline: TimelinePoint[];
@@ -78,6 +79,7 @@ export type WithdrawalResult = {
 
 export type JourneyResult = {
   accumulation: AccumulationResult;
+  maxSustainableMonthlyWithdrawal: number;
   shortfallOrSurplus: number;
   timeline: TimelinePoint[];
   withdrawal: WithdrawalResult;

@@ -20,7 +20,7 @@ class PlannerInput(PlannerModel):
     retirement_starting_balance: float = Field(
         default=0, alias="retirementStartingBalance", ge=0
     )
-    retirement_goal: float = Field(alias="retirementGoal", ge=100000, le=50000000)
+    retirement_goal: float = Field(alias="retirementGoal", ge=0, le=50000000)
     monthly_contribution: float = Field(alias="monthlyContribution", ge=0)
     annual_return_before_retirement: float = Field(
         alias="annualReturnBeforeRetirement", ge=0, le=0.2
@@ -75,6 +75,7 @@ class AccumulationResult(PlannerModel):
 class WithdrawalResult(PlannerModel):
     depletion_age: float | None = Field(alias="depletionAge")
     ending_balance: float = Field(alias="endingBalance")
+    lasts_forever: bool = Field(alias="lastsForever")
     starting_balance: float = Field(alias="startingBalance")
     sustainable_through_life_expectancy: bool = Field(
         alias="sustainableThroughLifeExpectancy"
@@ -86,6 +87,9 @@ class WithdrawalResult(PlannerModel):
 
 class JourneyResult(PlannerModel):
     accumulation: AccumulationResult
+    max_sustainable_monthly_withdrawal: float = Field(
+        alias="maxSustainableMonthlyWithdrawal"
+    )
     shortfall_or_surplus: float = Field(alias="shortfallOrSurplus")
     timeline: list[TimelinePoint]
     withdrawal: WithdrawalResult

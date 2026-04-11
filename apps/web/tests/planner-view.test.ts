@@ -81,6 +81,41 @@ describe("planner view summary connections", () => {
     );
   });
 
+  it("shows N/A for goal-driven tiles when no retirement goal is set", () => {
+    const noGoalInput = {
+      ...defaultPlannerInput,
+      retirementGoal: 0,
+    };
+
+    expect(
+      getSummaryValue(noGoalInput, "save", "Retirement goal gap"),
+    ).toBe("N/A");
+    expect(
+      getSummaryValue(noGoalInput, "save", "Monthly contribution needed"),
+    ).toBe("N/A");
+    expect(
+      getSummaryValue(noGoalInput, "journey", "Goal funding ratio"),
+    ).toBe("N/A");
+  });
+
+  it("calculates required monthly contribution independently of the current contribution input", () => {
+    const lowContributionInput = {
+      ...defaultPlannerInput,
+      monthlyContribution: 100,
+      retirementGoal: 2500000,
+    };
+    const highContributionInput = {
+      ...lowContributionInput,
+      monthlyContribution: 900,
+    };
+
+    expect(
+      getSummaryValue(lowContributionInput, "save", "Monthly contribution needed"),
+    ).toBe(
+      getSummaryValue(highContributionInput, "save", "Monthly contribution needed"),
+    );
+  });
+
   it("updates post-retirement tiles when withdrawal inputs change", () => {
     const baseInput = {
       ...defaultPlannerInput,
@@ -100,6 +135,10 @@ describe("planner view summary connections", () => {
       ...baseInput,
       withdrawalAmount: 3000,
     };
+    const updatedIncomeTargetInput = {
+      ...baseInput,
+      inflationRate: 0.04,
+    };
 
     expect(
       getSummaryValue(baseInput, "withdraw", "Years covered"),
@@ -112,19 +151,36 @@ describe("planner view summary connections", () => {
       getSummaryValue(updatedInput, "withdraw", "Depletion age"),
     );
     expect(
-      getSummaryValue(baseInput, "withdraw", "Ending balance"),
-    ).not.toBe(
-      getSummaryValue(updatedInput, "withdraw", "Ending balance"),
-    );
-    expect(
       getSummaryValue(baseInput, "journey", "Surplus or shortfall"),
     ).not.toBe(
       getSummaryValue(updatedInput, "journey", "Surplus or shortfall"),
     );
     expect(
-      getSummaryValue(baseInput, "journey", "Income target"),
+      getSummaryValue(baseInput, "journey", "Max monthly withdrawal"),
     ).not.toBe(
-      getSummaryValue(updatedInput, "journey", "Income target"),
+      getSummaryValue(updatedIncomeTargetInput, "journey", "Max monthly withdrawal"),
     );
+  });
+
+  it("shows forever when the current withdrawal path never depletes the portfolio", () => {
+    const foreverInput = {
+      ...defaultPlannerInput,
+      currentAge: 64,
+      retirementAge: 65,
+      lifeExpectancy: 92,
+      initialBalance: 2_000_000,
+      monthlyContribution: 0,
+      annualReturnBeforeRetirement: 0,
+      annualReturnDuringRetirement: 0.07,
+      annualContributionGrowthRate: 0,
+      withdrawalAmount: 2000,
+      withdrawalFrequency: "monthly" as const,
+      inflationRate: 0.01,
+      annualWithdrawalIncrease: 0,
+    };
+
+    expect(
+      getSummaryValue(foreverInput, "withdraw", "Years covered"),
+    ).toBe("Forever");
   });
 });

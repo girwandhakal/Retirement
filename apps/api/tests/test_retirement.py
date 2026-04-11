@@ -4,7 +4,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.domain.retirement import calculate_journey, calculate_withdrawal
+from app.domain.retirement import calculate_accumulation, calculate_journey, calculate_withdrawal
 from app.main import app
 from app.schemas.planner import PlannerInput
 
@@ -24,10 +24,11 @@ def test_domain_journey_grows_before_retirement() -> None:
     result = calculate_journey(payload)
 
     assert result.accumulation.retirement_balance > payload.initial_balance
-    assert result.accumulation.required_monthly_contribution >= payload.monthly_contribution
+    assert result.accumulation.required_monthly_contribution >= 0
     assert result.accumulation.goal_funding_ratio > 0
     assert result.withdrawal.starting_balance == result.accumulation.retirement_balance
     assert len(result.timeline) > len(result.accumulation.timeline)
+    assert result.max_sustainable_monthly_withdrawal > 0
 
 
 def test_journey_endpoint_returns_expected_shape() -> None:
@@ -96,8 +97,78 @@ def test_planner_endpoint_returns_all_views() -> None:
     assert "accumulation" in data
     assert "journey" in data
     assert "standaloneWithdrawal" in data
+    assert "maxSustainableMonthlyWithdrawal" in data["journey"]
     assert data["standaloneWithdrawal"]["startingBalance"] == 750000
     assert (
         data["journey"]["withdrawal"]["startingBalance"]
         == data["accumulation"]["retirementBalance"]
     )
+
+
+def test_required_monthly_contribution_is_absolute_not_relative_to_current_input() -> None:
+    base = {
+        "currentAge": 35,
+        "retirementAge": 65,
+        "lifeExpectancy": 92,
+        "initialBalance": 125000,
+        "retirementStartingBalance": 0,
+        "retirementGoal": 2500000,
+        "annualReturnBeforeRetirement": 0.07,
+        "annualReturnDuringRetirement": 0.05,
+        "compoundingFrequency": "monthly",
+        "annualContributionGrowthRate": 0.03,
+        "withdrawalAmount": 6500,
+        "withdrawalFrequency": "monthly",
+        "inflationRate": 0.025,
+        "annualWithdrawalIncrease": 0.02,
+    }
+
+    low = PlannerInput.model_validate({**base, "monthlyContribution": 100})
+    high = PlannerInput.model_validate({**base, "monthlyContribution": 900})
+
+    low_result = calculate_accumulation(low)
+    high_result = calculate_accumulation(high)
+
+    assert (
+        low_result.required_monthly_contribution
+        == high_result.required_monthly_contribution
+    )
+
+
+def test_goal_optional_returns_neutral_goal_metrics() -> None:
+    scenario = load_fixture()
+    scenario["input"]["retirementGoal"] = 0
+
+    payload = PlannerInput.model_validate(scenario["input"])
+    result = calculate_accumulation(payload)
+
+    assert result.required_monthly_contribution == 0
+    assert result.goal_gap == 0
+    assert result.goal_funding_ratio == 0
+
+
+def test_withdrawal_can_mark_plan_as_forever() -> None:
+    payload = PlannerInput.model_validate(
+        {
+            "currentAge": 64,
+            "retirementAge": 65,
+            "lifeExpectancy": 92,
+            "initialBalance": 2000000,
+            "retirementStartingBalance": 0,
+            "retirementGoal": 0,
+            "monthlyContribution": 0,
+            "annualReturnBeforeRetirement": 0,
+            "annualReturnDuringRetirement": 0.07,
+            "compoundingFrequency": "monthly",
+            "annualContributionGrowthRate": 0,
+            "withdrawalAmount": 2000,
+            "withdrawalFrequency": "monthly",
+            "inflationRate": 0.01,
+            "annualWithdrawalIncrease": 0,
+        }
+    )
+
+    result = calculate_withdrawal(payload, starting_balance=Decimal("2000000"))
+
+    assert result.lasts_forever is True
+    assert result.depletion_age is None

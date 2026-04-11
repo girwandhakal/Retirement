@@ -30,6 +30,7 @@ export function buildPlannerView(args: {
   journey: JourneyResult;
 }): PlannerView {
   const { accumulation, activeTab, input, journey } = args;
+  const hasRetirementGoal = input.retirementGoal > 0;
 
   if (activeTab === "save") {
     return {
@@ -57,20 +58,27 @@ export function buildPlannerView(args: {
         },
         {
           label: "Retirement goal gap",
-          value:
-            accumulation.goalGap >= 0
+          value: hasRetirementGoal
+            ? accumulation.goalGap >= 0
               ? formatCurrency(accumulation.goalGap)
-              : `-${formatCurrency(Math.abs(accumulation.goalGap))}`,
+              : `-${formatCurrency(Math.abs(accumulation.goalGap))}`
+            : "N/A",
           caption:
-            accumulation.goalGap >= 0
-              ? "Surplus above your target."
-              : "Shortfall below your target.",
+            hasRetirementGoal
+              ? accumulation.goalGap >= 0
+                ? "Surplus above your target."
+                : "Shortfall below your target."
+              : "Set a retirement goal to compare against a target.",
           accent: accumulation.goalGap >= 0 ? ("lime" as const) : ("rose" as const),
         },
         {
           label: "Monthly contribution needed",
-          value: formatCurrency(accumulation.requiredMonthlyContribution),
-          caption: "Monthly savings to reach your goal.",
+          value: hasRetirementGoal
+            ? formatCurrency(accumulation.requiredMonthlyContribution)
+            : "N/A",
+          caption: hasRetirementGoal
+            ? "Monthly savings needed to reach your goal."
+            : "Set a retirement goal to calculate the required savings rate.",
           accent: "gold" as const,
         },
         {
@@ -109,8 +117,12 @@ export function buildPlannerView(args: {
         },
         {
           label: "Years covered",
-          value: formatYears(journey.withdrawal.yearsCovered),
-          caption: "Years before funds run out.",
+          value: journey.withdrawal.lastsForever
+            ? "Forever"
+            : formatYears(journey.withdrawal.yearsCovered),
+          caption: journey.withdrawal.lastsForever
+            ? "Current withdrawal rate is sustained indefinitely."
+            : "Years the current withdrawal path is sustained.",
           accent: journey.withdrawal.sustainableThroughLifeExpectancy
             ? ("lime" as const)
             : ("gold" as const),
@@ -175,17 +187,21 @@ export function buildPlannerView(args: {
       },
       {
         label: "Goal funding ratio",
-        value: formatPercent(accumulation.goalFundingRatio),
-        caption: "How much of your goal is funded.",
+        value: hasRetirementGoal
+          ? formatPercent(accumulation.goalFundingRatio)
+          : "N/A",
+        caption: hasRetirementGoal
+          ? "How much of your goal is funded."
+          : "Set a retirement goal to compare funded progress.",
         accent:
           accumulation.goalFundingRatio >= 1
             ? ("lime" as const)
             : ("gold" as const),
       },
       {
-        label: "Income target",
-        value: formatCurrency(input.withdrawalAmount),
-        caption: `${input.withdrawalFrequency.charAt(0).toUpperCase() + input.withdrawalFrequency.slice(1)} withdrawal amount.`,
+        label: "Max monthly withdrawal",
+        value: formatCurrency(journey.maxSustainableMonthlyWithdrawal),
+        caption: "Estimated monthly retirement income that depletes the portfolio at life expectancy.",
         accent: "gold" as const,
       },
     ],

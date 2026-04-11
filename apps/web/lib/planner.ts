@@ -130,7 +130,7 @@ function sanitizePlannerInput(raw: Partial<PlannerInput>) {
     retirementGoal: coerceNumber(
       merged.retirementGoal,
       defaultPlannerInput.retirementGoal,
-      100_000,
+      0,
       50_000_000,
     ),
     monthlyContribution: coerceNumber(
@@ -231,31 +231,34 @@ function runAccumulation(
 }
 
 function solveRequiredMonthlyContribution(input: PlannerInput) {
-  const currentOutcome = runAccumulation(input, input.monthlyContribution);
-
-  if (currentOutcome.retirementBalance >= input.retirementGoal) {
+  if (input.retirementGoal <= 0) {
     return {
       additionalMonthlyContributionNeeded: 0,
       canReachGoal: true,
-      requiredMonthlyContribution: roundMoney(input.monthlyContribution),
+      requiredMonthlyContribution: 0,
     };
   }
 
-  let low = input.monthlyContribution;
-  let high = Math.max(input.monthlyContribution * 2, 500);
-  let canReachGoal = false;
+  const currentOutcome = runAccumulation(input, input.monthlyContribution);
+  let low = 0;
+  let high = Math.max(input.monthlyContribution, 500);
+  let canReachGoal = currentOutcome.retirementBalance >= input.retirementGoal;
 
-  for (let attempt = 0; attempt < 18; attempt += 1) {
-    if (runAccumulation(input, high).retirementBalance >= input.retirementGoal) {
-      canReachGoal = true;
-      break;
+  if (!canReachGoal) {
+    for (let attempt = 0; attempt < 18; attempt += 1) {
+      if (runAccumulation(input, high).retirementBalance >= input.retirementGoal) {
+        canReachGoal = true;
+        break;
+      }
+      high *= 2;
     }
-    high *= 2;
   }
 
   if (!canReachGoal) {
     return {
-      additionalMonthlyContributionNeeded: roundMoney(high - input.monthlyContribution),
+      additionalMonthlyContributionNeeded: roundMoney(
+        Math.max(0, high - input.monthlyContribution),
+      ),
       canReachGoal: false,
       requiredMonthlyContribution: roundMoney(high),
     };
@@ -273,7 +276,9 @@ function solveRequiredMonthlyContribution(input: PlannerInput) {
   }
 
   return {
-    additionalMonthlyContributionNeeded: roundMoney(high - input.monthlyContribution),
+    additionalMonthlyContributionNeeded: roundMoney(
+      Math.max(0, high - input.monthlyContribution),
+    ),
     canReachGoal: true,
     requiredMonthlyContribution: roundMoney(high),
   };
@@ -292,14 +297,20 @@ export function coercePlannerInput(raw: Partial<PlannerInput>) {
 export function calculateAccumulation(input: PlannerInput): AccumulationResult {
   const base = runAccumulation(input);
   const contributionTarget = solveRequiredMonthlyContribution(input);
-  const goalGap = roundMoney(base.retirementBalance - input.retirementGoal);
+  const goalGap =
+    input.retirementGoal > 0
+      ? roundMoney(base.retirementBalance - input.retirementGoal)
+      : 0;
 
   return {
     ...base,
     additionalMonthlyContributionNeeded:
       contributionTarget.additionalMonthlyContributionNeeded,
     canReachGoal: contributionTarget.canReachGoal,
-    goalFundingRatio: roundRatio(base.retirementBalance / input.retirementGoal),
+    goalFundingRatio:
+      input.retirementGoal > 0
+        ? roundRatio(base.retirementBalance / input.retirementGoal)
+        : 0,
     goalGap,
     requiredMonthlyContribution: contributionTarget.requiredMonthlyContribution,
   };
@@ -313,6 +324,47 @@ function resolveStandaloneWithdrawalStart(input: PlannerInput) {
   return input.initialBalance;
 }
 
+function solveMaxSustainableMonthlyWithdrawal(
+  input: PlannerInput,
+  startingBalance: number,
+) {
+  if (startingBalance <= 0) {
+    return 0;
+  }
+
+  const monthlyPayload: PlannerInput = {
+    ...input,
+    withdrawalAmount: 0,
+    withdrawalFrequency: "monthly",
+  };
+
+  let low = 0;
+  let high = Math.max(startingBalance / 12, 1000);
+
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    const simulation = simulateWithdrawal(monthlyPayload, startingBalance, high);
+
+    if (simulation.rawEndingBalance <= 0) {
+      break;
+    }
+
+    high *= 2;
+  }
+
+  for (let iteration = 0; iteration < 36; iteration += 1) {
+    const mid = (low + high) / 2;
+    const simulation = simulateWithdrawal(monthlyPayload, startingBalance, mid);
+
+    if (simulation.rawEndingBalance > 0) {
+      low = mid;
+    } else {
+      high = mid;
+    }
+  }
+
+  return roundMoney(low);
+}
+
 export function calculateWithdrawal(
   input: PlannerInput,
   startingBalance = resolveStandaloneWithdrawalStart(input),
@@ -323,24 +375,32 @@ export function calculateWithdrawal(
 function simulateWithdrawal(
   input: PlannerInput,
   startingBalance = resolveStandaloneWithdrawalStart(input),
+  initialWithdrawalAmount = input.withdrawalAmount,
 ): WithdrawalSimulation {
   const totalMonths = (input.lifeExpectancy - input.retirementAge) * 12;
   const compounding = compoundingIntervals[input.compoundingFrequency];
   const withdrawalInterval = withdrawalIntervals[input.withdrawalFrequency];
+  const withdrawalGrowthRate = yearlyWithdrawalBump(input);
+  const maxSimulationMonths =
+    initialWithdrawalAmount > 0 &&
+    withdrawalGrowthRate <= input.annualReturnDuringRetirement
+      ? 600 * 12
+      : totalMonths;
 
   let age = input.retirementAge;
   let balance = startingBalance;
   let rawBalance = startingBalance;
   let totalGrowth = 0;
   let totalWithdrawals = 0;
-  let withdrawalAmount = input.withdrawalAmount;
+  let withdrawalAmount = initialWithdrawalAmount;
   let depletionAge: number | null = null;
+  let lastsForever = false;
 
   const timeline: TimelinePoint[] = [
     buildPoint(age, balance, 0, totalGrowth, totalWithdrawals),
   ];
 
-  for (let month = 1; month <= totalMonths; month += 1) {
+  for (let month = 1; month <= maxSimulationMonths; month += 1) {
     const rawBalanceWasPositive = rawBalance > 0;
     const scheduledWithdrawalMonth = month % withdrawalInterval === 0;
 
@@ -379,9 +439,35 @@ function simulateWithdrawal(
 
     if (month % 12 === 0) {
       age += 1;
-      timeline.push(buildPoint(age, balance, 0, totalGrowth, totalWithdrawals));
-      withdrawalAmount *= 1 + yearlyWithdrawalBump(input);
+      if (month <= totalMonths) {
+        timeline.push(buildPoint(age, balance, 0, totalGrowth, totalWithdrawals));
+      }
+      withdrawalAmount *= 1 + withdrawalGrowthRate;
     }
+
+    if (
+      month > totalMonths &&
+      depletionAge === null &&
+      withdrawalGrowthRate <= input.annualReturnDuringRetirement &&
+      rawBalance > startingBalance
+    ) {
+      lastsForever = true;
+      break;
+    }
+
+    if (depletionAge !== null) {
+      break;
+    }
+  }
+
+  if (
+    depletionAge === null &&
+    initialWithdrawalAmount > 0 &&
+    withdrawalGrowthRate <= input.annualReturnDuringRetirement &&
+    maxSimulationMonths > totalMonths &&
+    rawBalance > 0
+  ) {
+    lastsForever = true;
   }
 
   return {
@@ -389,10 +475,12 @@ function simulateWithdrawal(
     result: {
       startingBalance: roundMoney(startingBalance),
       endingBalance: roundMoney(balance),
+      lastsForever,
       totalWithdrawals: roundMoney(totalWithdrawals),
-      yearsCovered: depletionAge
-        ? roundMoney(depletionAge - input.retirementAge)
-        : totalMonths / 12,
+      yearsCovered:
+        depletionAge !== null
+          ? roundMoney(depletionAge - input.retirementAge)
+          : totalMonths / 12,
       depletionAge: depletionAge ? roundMoney(depletionAge) : null,
       sustainableThroughLifeExpectancy:
         depletionAge === null || depletionAge >= input.lifeExpectancy,
@@ -410,6 +498,10 @@ export function calculateJourney(input: PlannerInput): JourneyResult {
 
   return {
     accumulation,
+    maxSustainableMonthlyWithdrawal: solveMaxSustainableMonthlyWithdrawal(
+      input,
+      accumulation.retirementBalance,
+    ),
     withdrawal: withdrawalSimulation.result,
     shortfallOrSurplus: withdrawalSimulation.rawEndingBalance,
     timeline: [
@@ -432,6 +524,10 @@ export function calculatePlannerResultSet(input: PlannerInput): PlannerResultSet
     standaloneWithdrawal,
     journey: {
       accumulation,
+      maxSustainableMonthlyWithdrawal: solveMaxSustainableMonthlyWithdrawal(
+        input,
+        accumulation.retirementBalance,
+      ),
       withdrawal: journeyWithdrawalSimulation.result,
       shortfallOrSurplus: journeyWithdrawalSimulation.rawEndingBalance,
       timeline: [
