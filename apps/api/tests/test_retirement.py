@@ -172,3 +172,51 @@ def test_withdrawal_can_mark_plan_as_forever() -> None:
 
     assert result.lasts_forever is True
     assert result.depletion_age is None
+
+
+def test_max_monthly_withdrawal_changes_with_current_portfolio_balance() -> None:
+    low_balance_payload = PlannerInput.model_validate(
+        {
+            "currentAge": 35,
+            "retirementAge": 65,
+            "lifeExpectancy": 92,
+            "initialBalance": 50000,
+            "retirementStartingBalance": 0,
+            "retirementGoal": 0,
+            "monthlyContribution": 1200,
+            "annualReturnBeforeRetirement": 0.07,
+            "annualReturnDuringRetirement": 0.05,
+            "compoundingFrequency": "monthly",
+            "annualContributionGrowthRate": 0.03,
+            "withdrawalAmount": 6500,
+            "withdrawalFrequency": "monthly",
+            "inflationRate": 0.025,
+            "annualWithdrawalIncrease": 0.02,
+        }
+    )
+    high_balance_payload = low_balance_payload.model_copy(
+        update={"initial_balance": 250000}
+    )
+
+    low_result = calculate_journey(low_balance_payload)
+    high_result = calculate_journey(high_balance_payload)
+
+    assert (
+        low_result.max_sustainable_monthly_withdrawal
+        != high_result.max_sustainable_monthly_withdrawal
+    )
+
+
+def test_max_monthly_withdrawal_replays_to_near_zero_ending_balance() -> None:
+    scenario = load_fixture()
+    scenario["input"]["withdrawalFrequency"] = "monthly"
+
+    payload = PlannerInput.model_validate(scenario["input"])
+    result = calculate_journey(payload)
+    replayed = calculate_journey(
+        payload.model_copy(
+            update={"withdrawal_amount": result.max_sustainable_monthly_withdrawal}
+        )
+    )
+
+    assert abs(replayed.shortfall_or_surplus) <= 5

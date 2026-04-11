@@ -216,7 +216,11 @@ export function PlannerShell() {
   }, [plannerRequestBody]);
 
   const accumulation = apiResults?.accumulation ?? localResults.accumulation;
-  const journey = apiResults?.journey ?? localResults.journey;
+  const journey =
+    apiResults?.journey &&
+    Number.isFinite(apiResults.journey.maxSustainableMonthlyWithdrawal)
+      ? apiResults.journey
+      : localResults.journey;
   const yearlyLedgerRows = [
     ...buildYearlyLedgerRows(accumulation.timeline),
     ...buildYearlyLedgerRows(journey.withdrawal.timeline, accumulation.timeline.length - 1),

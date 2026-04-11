@@ -183,4 +183,35 @@ describe("planner view summary connections", () => {
       getSummaryValue(foreverInput, "withdraw", "Years covered"),
     ).toBe("Forever");
   });
+
+  it("updates max monthly withdrawal when the current portfolio balance changes", () => {
+    const lowerBalanceInput = {
+      ...defaultPlannerInput,
+      initialBalance: 50_000,
+    };
+    const higherBalanceInput = {
+      ...lowerBalanceInput,
+      initialBalance: 250_000,
+    };
+
+    expect(
+      getSummaryValue(lowerBalanceInput, "journey", "Max monthly withdrawal"),
+    ).not.toBe(
+      getSummaryValue(higherBalanceInput, "journey", "Max monthly withdrawal"),
+    );
+  });
+
+  it("returns a max monthly withdrawal that depletes the portfolio at the end of the journey", () => {
+    const baseInput = {
+      ...defaultPlannerInput,
+      withdrawalFrequency: "monthly" as const,
+    };
+    const result = calculatePlannerResultSet(baseInput);
+    const replayed = calculatePlannerResultSet({
+      ...baseInput,
+      withdrawalAmount: result.journey.maxSustainableMonthlyWithdrawal,
+    });
+
+    expect(Math.abs(replayed.journey.shortfallOrSurplus)).toBeLessThanOrEqual(5);
+  });
 });

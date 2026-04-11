@@ -224,20 +224,46 @@ def solve_max_sustainable_monthly_withdrawal(
     high = max(starting_balance / Decimal("12"), Decimal("1000"))
 
     for _ in range(24):
-        _, raw_ending_balance = simulate_withdrawal(monthly_payload, starting_balance, high)
+        _, raw_ending_balance = simulate_withdrawal(
+            monthly_payload, starting_balance, high, False
+        )
         if raw_ending_balance <= 0:
             break
         high *= Decimal("2")
 
     for _ in range(36):
         mid = (low + high) / Decimal("2")
-        _, raw_ending_balance = simulate_withdrawal(monthly_payload, starting_balance, mid)
+        _, raw_ending_balance = simulate_withdrawal(
+            monthly_payload, starting_balance, mid, False
+        )
         if raw_ending_balance > 0:
             low = mid
         else:
             high = mid
 
-    return round_money(low)
+    rounded_low = to_decimal(round_money(low))
+    rounded_high = to_decimal(round_money(high))
+    candidates = [rounded_low, rounded_high]
+
+    best_candidate = candidates[0]
+    _, best_raw_ending_balance = simulate_withdrawal(
+        monthly_payload, starting_balance, best_candidate, False
+    )
+    best_distance = abs(best_raw_ending_balance)
+
+    for candidate in candidates[1:]:
+        _, raw_ending_balance = simulate_withdrawal(
+            monthly_payload, starting_balance, candidate, False
+        )
+        distance = abs(raw_ending_balance)
+
+        if distance < best_distance or (
+            distance == best_distance and candidate < best_candidate
+        ):
+            best_candidate = candidate
+            best_distance = distance
+
+    return round_money(best_candidate)
 
 
 def calculate_withdrawal(
@@ -250,6 +276,7 @@ def simulate_withdrawal(
     payload: PlannerInput,
     starting_balance: Decimal | None = None,
     initial_withdrawal_amount: Decimal | None = None,
+    allow_forever_extension: bool = True,
 ) -> WithdrawalSimulation:
     total_months = (payload.life_expectancy - payload.retirement_age) * 12
     compounding = COMPOUNDING_INTERVALS[payload.compounding_frequency]
@@ -268,6 +295,7 @@ def simulate_withdrawal(
     max_simulation_months = (
         600 * 12
         if withdrawal_start > 0
+        and allow_forever_extension
         and withdrawal_growth_rate <= to_decimal(payload.annual_return_during_retirement)
         else total_months
     )
@@ -333,6 +361,8 @@ def simulate_withdrawal(
             withdrawal_amount *= Decimal("1") + withdrawal_growth_rate
 
         if (
+            allow_forever_extension
+            and
             month > total_months
             and depletion_age is None
             and withdrawal_growth_rate
@@ -346,6 +376,8 @@ def simulate_withdrawal(
             break
 
     if (
+        allow_forever_extension
+        and
         depletion_age is None
         and withdrawal_start > 0
         and withdrawal_growth_rate <= to_decimal(payload.annual_return_during_retirement)

@@ -342,7 +342,12 @@ function solveMaxSustainableMonthlyWithdrawal(
   let high = Math.max(startingBalance / 12, 1000);
 
   for (let attempt = 0; attempt < 24; attempt += 1) {
-    const simulation = simulateWithdrawal(monthlyPayload, startingBalance, high);
+    const simulation = simulateWithdrawal(
+      monthlyPayload,
+      startingBalance,
+      high,
+      false,
+    );
 
     if (simulation.rawEndingBalance <= 0) {
       break;
@@ -353,7 +358,12 @@ function solveMaxSustainableMonthlyWithdrawal(
 
   for (let iteration = 0; iteration < 36; iteration += 1) {
     const mid = (low + high) / 2;
-    const simulation = simulateWithdrawal(monthlyPayload, startingBalance, mid);
+    const simulation = simulateWithdrawal(
+      monthlyPayload,
+      startingBalance,
+      mid,
+      false,
+    );
 
     if (simulation.rawEndingBalance > 0) {
       low = mid;
@@ -362,7 +372,41 @@ function solveMaxSustainableMonthlyWithdrawal(
     }
   }
 
-  return roundMoney(low);
+  const candidates = [roundMoney(low), roundMoney(high)];
+  const bestCandidate = candidates.reduce(
+    (best, candidate) => {
+      const endingBalance = Math.abs(
+        simulateWithdrawal(
+          monthlyPayload,
+          startingBalance,
+          candidate,
+          false,
+        ).rawEndingBalance,
+      );
+
+      if (
+        endingBalance < best.endingBalance ||
+        (endingBalance === best.endingBalance && candidate < best.candidate)
+      ) {
+        return { candidate, endingBalance };
+      }
+
+      return best;
+    },
+    {
+      candidate: candidates[0],
+      endingBalance: Math.abs(
+        simulateWithdrawal(
+          monthlyPayload,
+          startingBalance,
+          candidates[0],
+          false,
+        ).rawEndingBalance,
+      ),
+    },
+  );
+
+  return bestCandidate.candidate;
 }
 
 export function calculateWithdrawal(
@@ -376,6 +420,7 @@ function simulateWithdrawal(
   input: PlannerInput,
   startingBalance = resolveStandaloneWithdrawalStart(input),
   initialWithdrawalAmount = input.withdrawalAmount,
+  allowForeverExtension = true,
 ): WithdrawalSimulation {
   const totalMonths = (input.lifeExpectancy - input.retirementAge) * 12;
   const compounding = compoundingIntervals[input.compoundingFrequency];
@@ -383,6 +428,7 @@ function simulateWithdrawal(
   const withdrawalGrowthRate = yearlyWithdrawalBump(input);
   const maxSimulationMonths =
     initialWithdrawalAmount > 0 &&
+    allowForeverExtension &&
     withdrawalGrowthRate <= input.annualReturnDuringRetirement
       ? 600 * 12
       : totalMonths;
@@ -446,6 +492,7 @@ function simulateWithdrawal(
     }
 
     if (
+      allowForeverExtension &&
       month > totalMonths &&
       depletionAge === null &&
       withdrawalGrowthRate <= input.annualReturnDuringRetirement &&
@@ -461,6 +508,7 @@ function simulateWithdrawal(
   }
 
   if (
+    allowForeverExtension &&
     depletionAge === null &&
     initialWithdrawalAmount > 0 &&
     withdrawalGrowthRate <= input.annualReturnDuringRetirement &&
