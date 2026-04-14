@@ -1,6 +1,6 @@
 # Retirement Planner
 
-A no-login, browser-local retirement planning tool. Full product direction is documented in `.agent/project-plan.md`.
+A no-login retirement planning tool
 
 ## What it does today
 
